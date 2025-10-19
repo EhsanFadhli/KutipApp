@@ -1,19 +1,40 @@
 
-import 'dart:convert';
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:myapp/payment_model.dart';
+import 'package:myapp/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// --- Constants from main.dart ---
-const Color kBackground = Color(0xFF121212);
-const Color kPrimaryText = Color(0xFFFFFFFF);
-const Color kCardBackground = Color(0xFF1E1E1E);
-const Color kSubtleText = Color(0xFFBDBDBD);
-const Color kPrimaryBlue = Color(0xFF0D63F8);
-const Color kGreenAccent = Color(0xFF69F0AE);
+
+// Custom formatter for phone number
+class PhoneNumberInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final newTextLength = digitsOnly.length;
+
+    var newString = StringBuffer();
+    if (newTextLength > 0) {
+      newString.write(digitsOnly.substring(0, newTextLength > 3 ? 3 : newTextLength));
+    }
+    if (newTextLength > 3) {
+      newString.write('-');
+      newString.write(digitsOnly.substring(3, newTextLength > 6 ? 6 : newTextLength));
+    }
+    if (newTextLength > 6) {
+      newString.write(' ');
+      newString.write(digitsOnly.substring(6, newTextLength > 11 ? 11 : newTextLength));
+    }
+
+    return TextEditingValue(
+      text: newString.toString(),
+      selection: TextSelection.collapsed(offset: newString.length),
+    );
+  }
+}
+
 
 class AddPaymentPage extends StatefulWidget {
   const AddPaymentPage({super.key});
@@ -24,68 +45,72 @@ class AddPaymentPage extends StatefulWidget {
 
 class _AddPaymentPageState extends State<AddPaymentPage> {
   final _formKey = GlobalKey<FormState>();
-
-  // Controllers
   final _nameController = TextEditingController();
-  final _unitController = TextEditingController();
   final _phoneController = TextEditingController();
+  String? _selectedBlock;
+  final _unitController = TextEditingController();
   final _amountReceivedController = TextEditingController();
-
-  // State variables
-  String? _selectedBlock = 'C';
   String? _fromMonth;
-  int _fromYear = DateTime.now().year;
   String? _untilMonth;
-  int _untilYear = DateTime.now().year;
-  double _monthlyFee = 0.0;
-  double _amountToPay = 0.0;
-  double _balance = 0.0;
+  String? _fromYear;
+  String? _untilYear;
 
-  final List<String> _blocks = ['C', 'D'];
-  final List<String> _months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  final List<int> _years = List<int>.generate(10, (i) => DateTime.now().year - 5 + i);
+  double _amountToPay = 0.0;
+  double _monthlyFee = 0.0;
+  double _balance = 0.0;
 
   @override
   void initState() {
     super.initState();
     _loadMonthlyFee();
+    final currentYear = DateTime.now().year.toString();
+    _fromYear = currentYear;
+    _untilYear = currentYear;
     _amountReceivedController.addListener(_calculateBalance);
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _unitController.dispose();
-    _phoneController.dispose();
-    _amountReceivedController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadMonthlyFee() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _monthlyFee = prefs.getDouble("monthly_fee") ?? 0.0;
+      _monthlyFee = prefs.getDouble('monthly_fee') ?? 0.0;
     });
   }
 
-  void _calculateAmountToPay() {
-    if (_fromMonth != null && _untilMonth != null) {
-      final fromMonthIndex = _months.indexOf(_fromMonth!);
-      final untilMonthIndex = _months.indexOf(_untilMonth!);
+    @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _unitController.dispose();
+    _amountReceivedController.dispose();
+    super.dispose();
+  }
 
-      if (fromMonthIndex != -1 && untilMonthIndex != -1) {
-        final monthDifference = (_untilYear - _fromYear) * 12 + (untilMonthIndex - fromMonthIndex) + 1;
+
+  void _calculateAmountToPay() {
+    if (_fromMonth != null && _fromYear != null && _untilMonth != null && _untilYear != null) {
+      final months = DateFormat.MMMM().dateSymbols.MONTHS;
+      final fromMonthIndex = months.indexOf(_fromMonth!);
+      final untilMonthIndex = months.indexOf(_untilMonth!);
+      final fromYearInt = int.parse(_fromYear!);
+      final untilYearInt = int.parse(_untilYear!);
+
+      if (fromYearInt > untilYearInt || (fromYearInt == untilYearInt && fromMonthIndex > untilMonthIndex)) {
         setState(() {
-          _amountToPay = monthDifference > 0 ? monthDifference * _monthlyFee : 0.0;
+          _amountToPay = 0;
           _calculateBalance();
         });
+        return;
       }
+
+      final monthDifference = (untilYearInt - fromYearInt) * 12 + (untilMonthIndex - fromMonthIndex) + 1;
+
+      setState(() {
+        _amountToPay = monthDifference * _monthlyFee;
+        _calculateBalance();
+      });
     } else {
       setState(() {
-        _amountToPay = 0.0;
+        _amountToPay = 0;
         _calculateBalance();
       });
     }
@@ -94,7 +119,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
   void _calculateBalance() {
     final amountReceived = double.tryParse(_amountReceivedController.text) ?? 0.0;
     setState(() {
-      _balance = _amountToPay - amountReceived;
+      _balance = amountReceived - _amountToPay;
     });
   }
 
@@ -102,17 +127,17 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     if (_formKey.currentState!.validate()) {
       final newPayment = Payment(
         name: _nameController.text,
+        phone: _phoneController.text,
         block: _selectedBlock!,
         unit: _unitController.text,
-        phone: _phoneController.text,
-        fromMonth: _fromMonth!,
-        fromYear: _fromYear,
-        untilMonth: _untilMonth!,
-        untilYear: _untilYear,
         amountToPay: _amountToPay,
         amountReceived: double.tryParse(_amountReceivedController.text) ?? 0.0,
         balance: _balance,
         createdAt: DateTime.now(),
+        fromMonth: _fromMonth!,
+        untilMonth: _untilMonth!,
+        fromYear: _fromYear!,
+        untilYear: _untilYear!,
       );
 
       final prefs = await SharedPreferences.getInstance();
@@ -120,11 +145,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
       paymentsJson.add(newPayment.toJson());
       await prefs.setStringList('payments', paymentsJson);
 
-      log('Payment Saved: ${newPayment.toJson()}', name: 'AddPaymentPage');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Payment Saved Successfully!')),
-      );
-      Navigator.of(context).pop(true); // Return true to indicate a new payment was added
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -133,251 +154,326 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     return Scaffold(
       backgroundColor: kBackground,
       appBar: AppBar(
-        title: const Text('Add Payment', style: TextStyle(fontWeight: FontWeight.bold, color: kPrimaryText)),
+        title: const Text('Add New Payment', style: TextStyle(color: kPrimaryText)),
         backgroundColor: kBackground,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kPrimaryText),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          children: [
-            _FormCard(
-              title: 'Payer Information',
-              icon: Icons.person_outline,
-              children: [
-                _buildTextField(label: 'Name', controller: _nameController, icon: Icons.person),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _buildDropdown(_blocks, 'Block', _selectedBlock, (val) => setState(() => _selectedBlock = val)),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 3,
-                      child: _buildTextField(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: <Widget>[
+              _buildSectionCard(
+                title: 'Info',
+                children: [
+                  _buildTextField(label: 'Name', controller: _nameController, icon: Icons.person),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                      label: 'Phone',
+                      controller: _phoneController,
+                      icon: Icons.phone,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        PhoneNumberInputFormatter(),
+                      ]),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: _buildBlockDropdown()),
+                      const SizedBox(width: 16),
+                      Expanded(
+                          child: _buildTextField(
                         label: 'Unit',
                         controller: _unitController,
+                        icon: Icons.home,
                         keyboardType: TextInputType.number,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(label: 'Phone', controller: _phoneController, keyboardType: TextInputType.phone, icon: Icons.phone),
-              ],
-            ),
-            _FormCard(
-              title: 'Payment Period',
-              icon: Icons.date_range_outlined,
-              children: [
-                const _FormSectionHeader(title: 'From'),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _buildDropdown(_months, 'Month', _fromMonth, (val) {
-                        setState(() => _fromMonth = val);
-                        _calculateAmountToPay();
-                      }),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDropdown(_years.map((y) => y.toString()).toList(), 'Year', _fromYear.toString(), (val) {
-                        setState(() => _fromYear = int.parse(val!));
-                         _calculateAmountToPay();
-                      }),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const _FormSectionHeader(title: 'Until'),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _buildDropdown(_months, 'Month', _untilMonth, (val) {
-                        setState(() => _untilMonth = val);
-                        _calculateAmountToPay();
-                      }),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDropdown(_years.map((y) => y.toString()).toList(), 'Year', _untilYear.toString(), (val) {
-                        setState(() => _untilYear = int.parse(val!));
-                        _calculateAmountToPay();
-                      }),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            _FormCard(
-              title: 'Amount Details',
-              icon: Icons.monetization_on_outlined,
-              children: [
-                _buildAmountDisplayRow(
-                  title: 'Amount to Pay',
-                  amount: _amountToPay,
-                  style: const TextStyle(fontSize: 28, color: kPrimaryBlue, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  label: 'Amount Received',
-                  controller: _amountReceivedController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
-                  icon: Icons.input,
-                ),
-                const SizedBox(height: 16),
-                _buildAmountDisplayRow(
-                  title: 'Balance',
-                  amount: _balance,
-                  style: TextStyle(fontSize: 20, color: _balance <= 0 ? kGreenAccent : Colors.redAccent, fontWeight: FontWeight.bold),
-                ),
-
-              ],
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _savePayment,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryBlue,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                      )),
+                    ],
+                  ),
+                ],
               ),
-              child: const Text('Save Payment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kPrimaryText)),
-            ),
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 24),
+              _buildSectionCard(
+                title: 'Period',
+                children: [_buildMonthYearPicker()],
+              ),
+              const SizedBox(height: 24),
+              _buildSectionCard(
+                title: 'Amount',
+                titleAccessory: Text(
+                  '${NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(_monthlyFee)}/month',
+                  style: const TextStyle(color: kSubtleText, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                children: [
+                  _buildAmountToPayDisplay(),
+                  const SizedBox(height: 16),
+                  _buildAmountField(label: 'Amount Received', controller: _amountReceivedController),
+                  const SizedBox(height: 16),
+                  _buildBalanceDisplay(),
+                ],
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: _savePayment,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kPrimaryBlue,
+                  foregroundColor: kPrimaryText,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Save Payment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required String label,
-    required TextEditingController controller,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    IconData? icon,
-  }) {
+  Widget _buildSectionCard(
+      {required String title, required List<Widget> children, Widget? titleAccessory}) {
+    return ElevatedCard(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: kPrimaryText,
+                ),
+              ),
+              if (titleAccessory != null) titleAccessory,
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      {required String label,
+      required TextEditingController controller,
+      required IconData icon,
+      TextInputType? keyboardType,
+      List<TextInputFormatter>? inputFormatters}) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      decoration: _inputDecoration(label, icon),
-      style: const TextStyle(color: kPrimaryText),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter a $label';
-        }
-        return null;
-      },
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: kSubtleText),
+        filled: true,
+        fillColor: kBackground,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
+      validator: (value) => (value == null || value.isEmpty) ? 'Please enter a $label' : null,
     );
   }
 
-  Widget _buildDropdown(List<String> items, String hint, String? value, ValueChanged<String?> onChanged) {
+  Widget _buildBlockDropdown() {
     return DropdownButtonFormField<String>(
-      value: value,
-      decoration: _inputDecoration(hint, null),
-      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item, style: const TextStyle(color: kSubtleText),))).toList(),
-      onChanged: onChanged,
-      style: const TextStyle(color: kPrimaryText),
-      dropdownColor: kCardBackground,
-      icon: const Icon(Icons.arrow_drop_down, color: kSubtleText),
-      validator: (value) {
-        if (value == null) {
-          return 'Please select a $hint';
-        }
-        return null;
+      value: _selectedBlock,
+      hint: const Text('Block', style: TextStyle(color: kSubtleText)),
+      items: ['C', 'D'].map((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      onChanged: (newValue) {
+        setState(() {
+          _selectedBlock = newValue;
+        });
       },
+      decoration: InputDecoration(
+        prefixIcon: const Icon(Icons.location_city, color: kSubtleText),
+        filled: true,
+        fillColor: kBackground,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
+      validator: (value) => value == null ? 'Please select a block' : null,
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData? icon) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: kSubtleText),
-      prefixIcon: icon != null ? Icon(icon, color: kSubtleText, size: 20) : null,
-      filled: true,
-      fillColor: kCardBackground,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1)),
-      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    );
-  }
-
-  Widget _buildAmountDisplayRow({required String title, required double amount, required TextStyle style}){
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildAmountToPayDisplay() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 16, color: kSubtleText, fontWeight: FontWeight.w600)),
-        Text(
-          'RM ${amount.toStringAsFixed(2)}',
-          style: style,
+        const Text(
+          'Amount to Pay',
+          style: TextStyle(color: kSubtleText, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          decoration: BoxDecoration(
+            color: kBackground,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(_amountToPay),
+            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: kPrimaryText),
+          ),
         ),
       ],
     );
   }
-}
 
-class _FormCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final List<Widget> children;
-
-  const _FormCard({required this.title, required this.icon, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      color: kCardBackground.withOpacity(0.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-      margin: const EdgeInsets.only(bottom: 24),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: kSubtleText, size: 20),
-                const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kPrimaryText)),
-              ],
-            ),
-            const Divider(height: 24, color: kSubtleText),
-            ...children,
-          ],
+  Widget _buildAmountField({required String label, required TextEditingController controller}) {
+    return TextFormField(
+      controller: controller,
+      onChanged: (_) => _calculateBalance(),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 14.0, horizontal: 12.0),
+          child: Text('RM', style: TextStyle(color: kSubtleText, fontSize: 16)),
         ),
+        filled: true,
+        fillColor: kBackground,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Please enter an amount';
+        if (double.tryParse(value) == null) return 'Please enter a valid number';
+        return null;
+      },
+    );
+  }
+
+  Widget _buildBalanceDisplay() {
+    final bool isEffectivelyZero = _balance.abs() < 0.005;
+    final double displayBalance = isEffectivelyZero ? 0.0 : _balance;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kBackground,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Balance', style: TextStyle(fontSize: 18, color: kSubtleText)),
+          Text(
+            'RM ${displayBalance.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: displayBalance >= 0 ? kGreenAccent : kAccentRed,
+            ),
+          ),
+        ],
       ),
     );
   }
-}
 
-class _FormSectionHeader extends StatelessWidget {
-  final String title;
-  const _FormSectionHeader({required this.title});
+  Widget _buildMonthYearPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+                child: _buildMonthDropdown(
+                    label: 'From',
+                    value: _fromMonth,
+                    onChanged: (val) {
+                      setState(() => _fromMonth = val);
+                      _calculateAmountToPay();
+                    })),
+            const SizedBox(width: 16),
+            Expanded(
+                child: _buildYearDropdown(
+                    label: 'Year',
+                    value: _fromYear,
+                    onChanged: (val) {
+                      setState(() => _fromYear = val);
+                      _calculateAmountToPay();
+                    })),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+                child: _buildMonthDropdown(
+                    label: 'Until',
+                    value: _untilMonth,
+                    onChanged: (val) {
+                      setState(() => _untilMonth = val);
+                      _calculateAmountToPay();
+                    })),
+            const SizedBox(width: 16),
+            Expanded(
+                child: _buildYearDropdown(
+                    label: 'Year',
+                    value: _untilYear,
+                    onChanged: (val) {
+                      setState(() => _untilYear = val);
+                      _calculateAmountToPay();
+                    })),
+          ],
+        ),
+      ],
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Text(
-        title,
-        style: const TextStyle(color: kSubtleText, fontSize: 14, fontWeight: FontWeight.w500),
+  Widget _buildMonthDropdown({required String label, String? value, required ValueChanged<String?> onChanged}) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      hint: Text(label, style: const TextStyle(color: kSubtleText)),
+      items: DateFormat.MMMM().dateSymbols.MONTHS.map((String month) {
+        return DropdownMenuItem<String>(
+          value: month,
+          child: Text(month),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: kBackground,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
+      validator: (val) => val == null ? 'Please select a month' : null,
+    );
+  }
+
+  Widget _buildYearDropdown({required String label, String? value, required ValueChanged<String?> onChanged}) {
+    final currentYear = DateTime.now().year;
+    final years = List<String>.generate(11, (index) => (currentYear - 5 + index).toString());
+
+    return DropdownButtonFormField<String>(
+      value: value,
+      hint: Text(label, style: const TextStyle(color: kSubtleText)),
+      items: years.map((String year) {
+        return DropdownMenuItem<String>(
+          value: year,
+          child: Text(year),
+        );
+      }).toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: kBackground,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
+      validator: (val) => val == null ? 'Please select a year' : null,
     );
   }
 }

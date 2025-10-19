@@ -1,21 +1,14 @@
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:myapp/add_payment_page.dart';
+import 'package:myapp/add_payment_page.dart' show AddPaymentPage;
 import 'package:myapp/payment_model.dart';
+import 'package:myapp/previous_payments_page.dart';
+import 'package:myapp/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// --- Professional Color Palette ---
-const Color kPrimaryBlue = Color(0xFF0D63F8);
-const Color kAccentRed = Color(0xFFFF4081);
-const Color kBackground = Color(0xFF121212);
-const Color kCardBackground = Color(0xFF1E1E1E);
-const Color kSubtleText = Color(0xFFBDBDBD);
-const Color kPrimaryText = Color(0xFFFFFFFF);
-const Color kGreenAccent = Color(0xFF69F0AE);
+
 
 void main() {
   runApp(const MyApp());
@@ -71,6 +64,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  Future<void> _cashHanded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> recentPaymentsJson = prefs.getStringList('payments') ?? [];
+    final List<String> previousPaymentsJson = prefs.getStringList('previous_payments') ?? [];
+
+    previousPaymentsJson.addAll(recentPaymentsJson);
+
+    await prefs.setStringList('previous_payments', previousPaymentsJson);
+    await prefs.remove('payments');
+
+    _loadPayments();
+  }
+
+
   void _navigateToAddPayment() async {
     final result = await Navigator.push(
       context,
@@ -103,87 +110,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         actions: [
           IconButton(
-              icon: const Icon(Icons.notifications_active, color: kSubtleText),
-              onPressed: () {}),
-          IconButton(
-              icon: const Icon(Icons.account_circle, color: kSubtleText),
-              onPressed: () {}),
+              icon: const Icon(Icons.history, color: kSubtleText),
+              onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PreviousPaymentsPage()),
+                  )),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 80.0), // Add padding for FAB
         children: <Widget>[
-          TotalCashCard(totalCash: _totalCashCollected),
+          TotalCashCard(totalCash: _totalCashCollected, onCashHanded: _cashHanded),
           const SizedBox(height: 24),
           const MonthlyFeeCard(),
           const SizedBox(height: 24),
           RecentPaymentsSection(payments: _payments),
         ],
       ),
-      bottomNavigationBar: BottomAppBar(
-        color: kCardBackground,
-        elevation: 8,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: <Widget>[
-            IconButton(
-                icon: const Icon(Icons.home_filled, color: kSubtleText),
-                onPressed: () {}),
-            IconButton(
-                icon: const Icon(Icons.donut_large, color: kSubtleText),
-                onPressed: () {}),
-            IconButton(
-              icon: const Icon(Icons.add_circle, size: 40, color: kPrimaryBlue),
-              onPressed: _navigateToAddPayment,
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: kPrimaryBlue.withOpacity(0.5),
+              blurRadius: 15,
+              spreadRadius: 2,
+              offset: const Offset(0, 5),
             ),
-            IconButton(
-                icon: const Icon(Icons.history_edu, color: kSubtleText),
-                onPressed: () {}),
-            IconButton(
-                icon: const Icon(Icons.settings, color: kSubtleText),
-                onPressed: () {}),
           ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: _navigateToAddPayment,
+          backgroundColor: kPrimaryBlue,
+          foregroundColor: kPrimaryText,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          icon: const Icon(Icons.add, size: 24),
+          label: const Text(
+            'New Payment',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
         ),
       ),
     );
   }
 }
 
-class ElevatedCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-  const ElevatedCard({super.key, required this.child, this.padding});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: kCardBackground,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: kPrimaryBlue.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: padding ?? const EdgeInsets.all(20.0),
-        child: child,
-      ),
-    );
-  }
-}
 
 class TotalCashCard extends StatelessWidget {
   final double totalCash;
-  const TotalCashCard({super.key, required this.totalCash});
+  final VoidCallback onCashHanded;
+  const TotalCashCard({super.key, required this.totalCash, required this.onCashHanded});
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +189,7 @@ class TotalCashCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: onCashHanded,
               icon: const Icon(Icons.arrow_upward),
               label: const Text('Cash Handed'),
               style: ElevatedButton.styleFrom(
@@ -241,17 +219,43 @@ class MonthlyFeeCard extends StatefulWidget {
 class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
   final TextEditingController _feeController = TextEditingController();
   static const String _storageKey = "monthly_fee";
+  double _savedFee = 0.0;
+  bool _isFeeChanged = false;
 
   @override
   void initState() {
     super.initState();
     _loadFee();
+    _feeController.addListener(_onFeeChanged);
+  }
+
+  void _onFeeChanged() {
+    final currentFee = double.tryParse(_feeController.text);
+    bool hasChanged;
+
+    if (currentFee == null) {
+      hasChanged = !(_feeController.text.isEmpty && _savedFee == 0.0);
+    } else {
+      final roundedCurrent = (currentFee * 100).round();
+      final roundedSaved = (_savedFee * 100).round();
+      hasChanged = roundedCurrent != roundedSaved;
+    }
+
+    if (hasChanged != _isFeeChanged) {
+      setState(() {
+        _isFeeChanged = hasChanged;
+      });
+    }
   }
 
   Future<void> _loadFee() async {
     final prefs = await SharedPreferences.getInstance();
     final double fee = prefs.getDouble(_storageKey) ?? 0.0;
-    _feeController.text = fee.toStringAsFixed(2);
+    setState(() {
+      _savedFee = fee;
+      _feeController.text = fee.toStringAsFixed(2);
+      _isFeeChanged = false;
+    });
   }
 
   Future<void> _saveFee() async {
@@ -259,6 +263,10 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
     final double? fee = double.tryParse(_feeController.text);
     if (fee != null) {
       await prefs.setDouble(_storageKey, fee);
+      setState(() {
+        _savedFee = fee;
+        _isFeeChanged = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Monthly Fee Saved!')),
       );
@@ -300,9 +308,7 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
                 child: TextField(
                   controller: _feeController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))
-                  ],
+                  inputFormatters: [DecimalTextInputFormatter()],
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -317,17 +323,16 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
               ),
               const SizedBox(width: 12),
               ElevatedButton.icon(
-                onPressed: _saveFee,
+                onPressed: _isFeeChanged ? _saveFee : null,
                 icon: const Icon(Icons.check_circle),
                 label: const Text('Set'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryBlue,
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: kPrimaryBlue.withOpacity(0.5),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                 ),
               ),
             ],
@@ -339,10 +344,12 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
 
   @override
   void dispose() {
+    _feeController.removeListener(_onFeeChanged);
     _feeController.dispose();
     super.dispose();
   }
 }
+
 
 // --- Recent Payments Section ---
 class RecentPaymentsSection extends StatelessWidget {
@@ -394,164 +401,6 @@ class RecentPaymentsSection extends StatelessWidget {
                 );
               },
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class RecentPaymentTile extends StatelessWidget {
-  final Payment payment;
-
-  const RecentPaymentTile({super.key, required this.payment});
-
-  String _formatMonthRange() {
-    final fromMonthShort = payment.fromMonth.substring(0, 3);
-    final untilMonthShort = payment.untilMonth.substring(0, 3);
-
-    if (payment.fromYear == payment.untilYear) {
-      if (payment.fromMonth == payment.untilMonth) {
-        return '$fromMonthShort ${payment.fromYear}';
-      } else {
-        return '$fromMonthShort - $untilMonthShort ${payment.untilYear}';
-      }
-    } else {
-      return '$fromMonthShort ${payment.fromYear} - $untilMonthShort ${payment.untilYear}';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final formattedAmount = NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(payment.amountReceived);
-    final blockAndUnit = '${payment.block}-${payment.unit}';
-    final initial = payment.name.isNotEmpty ? payment.name[0].toUpperCase() : '';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: kBackground.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: kPrimaryBlue.withOpacity(0.2),
-                foregroundColor: kPrimaryText,
-                child: Text(initial, style: const TextStyle(fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(payment.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  Text(blockAndUnit, style: const TextStyle(color: kSubtleText, fontSize: 12)),
-                ],
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(formattedAmount, style: const TextStyle(color: kGreenAccent, fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(_formatMonthRange(), style: const TextStyle(color: kSubtleText, fontSize: 12)),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-}
-
-class PaymentDetailsContent extends StatelessWidget {
-  final Payment payment;
-  const PaymentDetailsContent({super.key, required this.payment});
-
-  @override
-  Widget build(BuildContext context) {
-    final formattedDate = DateFormat('MMMM d, yyyy ''at'' h:mm a').format(payment.createdAt);
-
-    String formatPeriod(Payment p) {
-      final from = '${p.fromMonth} ${p.fromYear}';
-      final until = '${p.untilMonth} ${p.untilYear}';
-      return from == until ? from : '$from - $until';
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: kCardBackground,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Payment Details', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: kPrimaryText)),
-              IconButton(
-                icon: const Icon(Icons.close, color: kSubtleText),
-                onPressed: () => Navigator.of(context).pop(),
-              )
-            ],
-          ),
-          const Divider(color: kSubtleText, height: 24),
-          _buildDetailRow(icon: Icons.person, label: 'Payer', value: payment.name),
-          _buildDetailRow(icon: Icons.home_work, label: 'Unit', value: '${payment.block}-${payment.unit}'),
-          _buildDetailRow(icon: Icons.phone, label: 'Phone', value: payment.phone),
-          _buildDetailRow(icon: Icons.calendar_today, label: 'Period', value: formatPeriod(payment)),
-          const Divider(color: kSubtleText, height: 32),
-          _buildAmountRow(label: 'Amount to Pay', amount: payment.amountToPay, color: kPrimaryText),
-          _buildAmountRow(label: 'Amount Received', amount: payment.amountReceived, color: kPrimaryText),
-          _buildAmountRow(
-            label: 'Balance',
-            amount: payment.balance,
-            color: payment.balance <= 0 ? kGreenAccent : kAccentRed,
-            isBold: true,
-          ),
-          const SizedBox(height: 24),
-          Center(child: Text('Paid on: $formattedDate', style: const TextStyle(color: kSubtleText, fontSize: 12)))
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow({required IconData icon, required String label, required String value}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Icon(icon, color: kSubtleText, size: 18),
-          const SizedBox(width: 16),
-          Expanded(child: Text(label, style: const TextStyle(color: kSubtleText, fontSize: 16))),
-          Text(value, style: const TextStyle(color: kPrimaryText, fontSize: 16, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAmountRow({required String label, required double amount, required Color color, bool isBold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: kSubtleText, fontSize: 16)),
-          Text(
-            NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(amount),
-            style: TextStyle(
-              color: color,
-              fontSize: isBold ? 20 : 18,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
         ],
       ),
     );

@@ -2,69 +2,70 @@
 import 'dart:convert';
 
 class Payment {
-  final String name;
-  final String block;
-  final String unit;
-  final String phone;
-  final String fromMonth;
-  final int fromYear;
-  final String untilMonth;
-  final int untilYear;
-  final double amountToPay;
-  final double amountReceived;
-  final double balance;
-  final DateTime createdAt;
+  String name;
+  String phone;
+  String block;
+  String unit;
+  double amountToPay;
+  double amountReceived;
+  double balance;
+  DateTime createdAt;
+  String fromMonth;
+  String untilMonth;
+  String fromYear;
+  String untilYear;
 
   Payment({
     required this.name,
+    required this.phone,
     required this.block,
     required this.unit,
-    required this.phone,
-    required this.fromMonth,
-    required this.fromYear,
-    required this.untilMonth,
-    required this.untilYear,
     required this.amountToPay,
     required this.amountReceived,
     required this.balance,
     required this.createdAt,
+    required this.fromMonth,
+    required this.untilMonth,
+    required this.fromYear,
+    required this.untilYear,
   });
 
   Map<String, dynamic> toMap() {
     return {
       'name': name,
+      'phone': phone,
       'block': block,
       'unit': unit,
-      'phone': phone,
-      'fromMonth': fromMonth,
-      'fromYear': fromYear,
-      'untilMonth': untilMonth,
-      'untilYear': untilYear,
       'amountToPay': amountToPay,
       'amountReceived': amountReceived,
       'balance': balance,
       'createdAt': createdAt.toIso8601String(),
+      'fromMonth': fromMonth,
+      'untilMonth': untilMonth,
+      'fromYear': fromYear,
+      'untilYear': untilYear,
     };
   }
 
   factory Payment.fromMap(Map<String, dynamic> map) {
     return Payment(
       name: map['name'] ?? '',
+      phone: map['phone'] ?? '',
       block: map['block'] ?? '',
       unit: map['unit'] ?? '',
-      phone: map['phone'] ?? '',
+      amountToPay: (map['amountToPay'] as num?)?.toDouble() ?? 0.0,
+      amountReceived: (map['amountReceived'] as num?)?.toDouble() ?? 0.0,
+      balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
+      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
       fromMonth: map['fromMonth'] ?? '',
-      fromYear: map['fromYear']?.toInt() ?? 0,
       untilMonth: map['untilMonth'] ?? '',
-      untilYear: map['untilYear']?.toInt() ?? 0,
-      amountToPay: map['amountToPay']?.toDouble() ?? 0.0,
-      amountReceived: map['amountReceived']?.toDouble() ?? 0.0,
-      balance: map['balance']?.toDouble() ?? 0.0,
-      createdAt: DateTime.parse(map['createdAt']),
+      fromYear: map['fromYear'] ?? '',
+      untilYear: map['untilYear'] ?? '',
     );
   }
 
-  String toJson() => json.encode(toMap());
+    String toJson() => json.encode(toMap());
 
   factory Payment.fromJson(String source) => Payment.fromMap(json.decode(source));
+
 }
