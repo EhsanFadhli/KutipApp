@@ -1,8 +1,11 @@
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/add_payment_page.dart' show AddPaymentPage;
+import 'package:myapp/log_service.dart';
+import 'package:myapp/logs_page.dart';
 import 'package:myapp/payment_model.dart';
 import 'package:myapp/previous_payments_page.dart';
 import 'package:myapp/ui/widgets.dart';
@@ -64,17 +67,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _cashHanded() async {
-    final prefs = await SharedPreferences.getInstance();
-    final List<String> recentPaymentsJson = prefs.getStringList('payments') ?? [];
-    final List<String> previousPaymentsJson = prefs.getStringList('previous_payments') ?? [];
+  Future<void> _showCashHandedConfirmation() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return CountdownConfirmationDialog(
+          onConfirm: () async {
+            final prefs = await SharedPreferences.getInstance();
+            final List<String> recentPaymentsJson = prefs.getStringList('payments') ?? [];
+            final List<String> previousPaymentsJson = prefs.getStringList('previous_payments') ?? [];
 
-    previousPaymentsJson.addAll(recentPaymentsJson);
+            previousPaymentsJson.addAll(recentPaymentsJson);
 
-    await prefs.setStringList('previous_payments', previousPaymentsJson);
-    await prefs.remove('payments');
+            await prefs.setStringList('previous_payments', previousPaymentsJson);
+            await prefs.remove('payments');
 
-    _loadPayments();
+            final formattedAmount = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(_totalCashCollected);
+            await LogService.logAction('Archived all recent payments - $formattedAmount');
+
+            _loadPayments();
+          },
+        );
+      },
+    );
+
+    if (result == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cash Handed and Payments Archived!')),
+      );
+    }
   }
 
 
@@ -95,32 +117,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         backgroundColor: kBackground,
         elevation: 0,
-        title: const Row(
-          children: [
-            Icon(Icons.dashboard_customize, color: kPrimaryBlue),
-            SizedBox(width: 12),
-            Text(
-              'Dashboard',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
-            ),
-          ],
+        title: const Text(
+          'Kutip',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            letterSpacing: 1.5,
+          ),
         ),
         actions: [
           IconButton(
-              icon: const Icon(Icons.history, color: kSubtleText),
-              onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const PreviousPaymentsPage()),
-                  )),
+            icon: const Icon(Icons.history, color: kSubtleText),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const PreviousPaymentsPage()),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.article, color: kSubtleText),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const LogsPage()),
+            ),
+          ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 80.0), // Add padding for FAB
         children: <Widget>[
-          TotalCashCard(totalCash: _totalCashCollected, onCashHanded: _cashHanded),
+          TotalCashCard(totalCash: _totalCashCollected, onCashHanded: _showCashHandedConfirmation),
           const SizedBox(height: 24),
           const MonthlyFeeCard(),
           const SizedBox(height: 24),
@@ -263,6 +288,8 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
     final double? fee = double.tryParse(_feeController.text);
     if (fee != null) {
       await prefs.setDouble(_storageKey, fee);
+      final formattedFee = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(fee);
+      await LogService.logAction('Set monthly fee - $formattedFee');
       setState(() {
         _savedFee = fee;
         _isFeeChanged = false;
@@ -403,6 +430,82 @@ class RecentPaymentsSection extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class CountdownConfirmationDialog extends StatefulWidget {
+  final Future<void> Function() onConfirm;
+
+  const CountdownConfirmationDialog({super.key, required this.onConfirm});
+
+  @override
+  State<CountdownConfirmationDialog> createState() => _CountdownConfirmationDialogState();
+}
+
+class _CountdownConfirmationDialogState extends State<CountdownConfirmationDialog> {
+  int _countdown = 10;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_countdown > 0) {
+        setState(() {
+          _countdown--;
+        });
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isConfirmEnabled = _countdown == 0;
+
+    return AlertDialog(
+      backgroundColor: kCardBackground,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Confirm Action', style: TextStyle(color: kPrimaryText, fontWeight: FontWeight.bold)),
+      content: Text(
+        'This will archive all recent payments and reset the collected cash amount. This action cannot be undone.',
+        style: TextStyle(color: kSubtleText),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel', style: TextStyle(color: kPrimaryBlue)),
+        ),
+        ElevatedButton(
+          onPressed: isConfirmEnabled
+              ? () async {
+                  await widget.onConfirm();
+                  Navigator.of(context).pop(true);
+                }
+              : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kAccentRed,
+            disabledBackgroundColor: kAccentRed.withOpacity(0.5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          child: Text(
+            isConfirmEnabled ? 'Confirm' : 'Confirm ($_countdown)',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
     );
   }
 }

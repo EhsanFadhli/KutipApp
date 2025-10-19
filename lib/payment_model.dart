@@ -49,18 +49,18 @@ class Payment {
 
   factory Payment.fromMap(Map<String, dynamic> map) {
     return Payment(
-      name: map['name'] ?? '',
-      phone: map['phone'] ?? '',
-      block: map['block'] ?? '',
-      unit: map['unit'] ?? '',
+      name: map['name']?.toString() ?? '',
+      phone: map['phone']?.toString() ?? '',
+      block: map['block']?.toString() ?? '',
+      unit: map['unit']?.toString() ?? '',
       amountToPay: (map['amountToPay'] as num?)?.toDouble() ?? 0.0,
       amountReceived: (map['amountReceived'] as num?)?.toDouble() ?? 0.0,
       balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
-      fromMonth: map['fromMonth'] ?? '',
-      untilMonth: map['untilMonth'] ?? '',
-      fromYear: map['fromYear'] ?? '',
-      untilYear: map['untilYear'] ?? '',
+      createdAt: DateTime.parse(map['createdAt']?.toString() ?? DateTime.now().toIso8601String()),
+      fromMonth: map['fromMonth']?.toString() ?? '',
+      untilMonth: map['untilMonth']?.toString() ?? '',
+      fromYear: map['fromYear']?.toString() ?? '',
+      untilYear: map['untilYear']?.toString() ?? '',
     );
   }
 

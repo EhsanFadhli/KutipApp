@@ -122,7 +122,7 @@ class PaymentDetailsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('MMMM d, yyyy ''at'' h:mm a').format(payment.createdAt);
+    final formattedDate = DateFormat("MMMM d, yyyy 'at' h:mm a").format(payment.createdAt);
     final roundedBalance = (payment.balance * 100).round() / 100;
 
     String formatPeriod(Payment p) {

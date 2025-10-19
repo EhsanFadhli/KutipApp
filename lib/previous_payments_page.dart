@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/payment_model.dart';
 import 'package:myapp/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-
+import 'dart:developer' as developer;
 
 class PreviousPaymentsPage extends StatefulWidget {
   const PreviousPaymentsPage({super.key});
@@ -25,13 +24,31 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
 
   Future<void> _loadPreviousPayments() async {
     final prefs = await SharedPreferences.getInstance();
-    final List<String> paymentsJson = prefs.getStringList('payments') ?? [];
-    final List<Payment> payments = paymentsJson.map((p) => Payment.fromJson(p)).toList();
-    payments.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Sort by most recent
-    setState(() {
-      _payments = payments;
-      _isLoading = false;
-    });
+    final List<String> paymentsJson = prefs.getStringList('previous_payments') ?? [];
+    
+    final List<Payment> loadedPayments = [];
+    for (final p in paymentsJson) {
+      try {
+        loadedPayments.add(Payment.fromJson(p));
+      } catch (e, s) {
+        developer.log(
+          'Failed to parse payment, skipping.',
+          name: 'PreviousPaymentsPage',
+          error: e,
+          stackTrace: s,
+          level: 1000, // SEVERE
+        );
+      }
+    }
+    
+    loadedPayments.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Sort by most recent
+    
+    if (mounted) {
+      setState(() {
+        _payments = loadedPayments;
+        _isLoading = false;
+      });
+    }
   }
 
   void _showPaymentDetailsModal(BuildContext context, Payment payment) {
@@ -66,7 +83,7 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Previous Payments',
+                      'Archived Payments',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kPrimaryText),
                     ),
                     const SizedBox(height: 16),
@@ -75,7 +92,7 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 32.0),
                               child: Text(
-                                'No previous payments found.',
+                                'No archived payments found.',
                                 style: TextStyle(color: kSubtleText, fontSize: 16),
                               ),
                             ),

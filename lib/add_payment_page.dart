@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:myapp/log_service.dart';
 import 'package:myapp/payment_model.dart';
 import 'package:myapp/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,6 +31,19 @@ class PhoneNumberInputFormatter extends TextInputFormatter {
 
     return TextEditingValue(
       text: newString.toString(),
+      selection: TextSelection.collapsed(offset: newString.length),
+    );
+  }
+}
+
+class DecimalTextInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final regExp = RegExp(r'^\d*\.?\d*$');
+    final String newString = regExp.stringMatch(newValue.text) ?? oldValue.text;
+    return TextEditingValue(
+      text: newString,
       selection: TextSelection.collapsed(offset: newString.length),
     );
   }
@@ -125,13 +139,14 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
 
   Future<void> _savePayment() async {
     if (_formKey.currentState!.validate()) {
+      final amountReceived = double.tryParse(_amountReceivedController.text) ?? 0.0;
       final newPayment = Payment(
         name: _nameController.text,
         phone: _phoneController.text,
         block: _selectedBlock!,
         unit: _unitController.text,
         amountToPay: _amountToPay,
-        amountReceived: double.tryParse(_amountReceivedController.text) ?? 0.0,
+        amountReceived: amountReceived,
         balance: _balance,
         createdAt: DateTime.now(),
         fromMonth: _fromMonth!,
@@ -144,6 +159,9 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
       final List<String> paymentsJson = prefs.getStringList('payments') ?? [];
       paymentsJson.add(newPayment.toJson());
       await prefs.setStringList('payments', paymentsJson);
+
+      final formattedAmount = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(amountReceived);
+      await LogService.logAction('Added payment for ${_nameController.text} - $formattedAmount');
 
       Navigator.of(context).pop(true);
     }
@@ -338,6 +356,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
       controller: controller,
       onChanged: (_) => _calculateBalance(),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [DecimalTextInputFormatter()],
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: const Padding(
