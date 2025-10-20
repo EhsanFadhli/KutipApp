@@ -16,6 +16,84 @@ const Color kGreenAccent = Color(0xFF69F0AE);
 
 // --- Reusable Widgets ---
 
+void showSuccessSnackBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: _AnimatedSnackBarContent(message: message),
+      backgroundColor: const Color(0xFF2E7D32), // Use a specific dark green for the SnackBar background
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      margin: const EdgeInsets.all(16.0),
+    ),
+  );
+}
+
+class _AnimatedSnackBarContent extends StatefulWidget {
+  final String message;
+
+  const _AnimatedSnackBarContent({required this.message});
+
+  @override
+  _AnimatedSnackBarContentState createState() => _AnimatedSnackBarContentState();
+}
+
+class _AnimatedSnackBarContentState extends State<_AnimatedSnackBarContent> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.5),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    ));
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _offsetAnimation,
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle, color: kPrimaryText),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                widget.message,
+                style: const TextStyle(color: kPrimaryText, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class ElevatedCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;

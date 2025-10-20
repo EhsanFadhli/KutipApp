@@ -52,11 +52,6 @@ class _LogsPageState extends State<LogsPage> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'All Actions',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kPrimaryText),
-                    ),
-                    const SizedBox(height: 16),
                     _logs.isEmpty
                         ? const Center(
                             child: Padding(

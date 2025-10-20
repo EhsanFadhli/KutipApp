@@ -77,3 +77,12 @@ The current development effort is focused on refining the user interface.
 
 16. **Robust Data Handling & Error Resiliency:**
     -   `try-catch` blocks have been implemented to gracefully handle corrupted or malformed data.
+
+17. **Custom Success Notifications:**
+    -   The reusable `showSuccessSnackBar` function now uses a dark green background with white text for improved readability and a more professional appearance.
+
+18. **Animated Success Notifications:**
+    -   The success `SnackBar` now includes a fade-in and slide-up animation for a more dynamic and engaging user experience.
+
+19. **Disable "Cash Handed" Button:**
+    -   The "Cash Handed" button is now disabled when the total cash collected is zero, preventing accidental or unnecessary actions.

@@ -91,9 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     if (result == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cash Handed and Payments Archived!')),
-      );
+      showSuccessSnackBar(context, 'Cash Handed and Payments Archived!');
     }
   }
 
@@ -186,6 +184,7 @@ class TotalCashCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formattedTotal = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(totalCash);
+    final isCashCollected = totalCash > 0;
     return ElevatedCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,12 +208,13 @@ class TotalCashCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: onCashHanded,
+              onPressed: isCashCollected ? onCashHanded : null,
               icon: const Icon(Icons.arrow_upward),
               label: const Text('Cash Handed'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kAccentRed,
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: kAccentRed.withOpacity(0.5),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 shape: RoundedRectangleBorder(
@@ -288,9 +288,7 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
       _isFeeChanged = false;
     });
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Monthly Fee Saved!')),
-    );
+    showSuccessSnackBar(context, 'Monthly Fee Saved!');
   }
 
   String _formatCurrency(int amountInCents) {

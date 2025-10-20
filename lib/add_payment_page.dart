@@ -155,7 +155,10 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
       final formattedAmount = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(amountReceived);
       await LogService.logAction('Added payment for ${_nameController.text} - $formattedAmount');
 
-      Navigator.of(context).pop(true);
+      if (mounted) {
+        showSuccessSnackBar(context, 'Payment saved successfully!');
+        Navigator.of(context).pop(true);
+      }
     }
   }
 

@@ -82,11 +82,6 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Archived Payments',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kPrimaryText),
-                    ),
-                    const SizedBox(height: 16),
                     _payments.isEmpty
                         ? const Center(
                             child: Padding(
