@@ -123,7 +123,6 @@ class PaymentDetailsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final formattedDate = DateFormat("MMMM d, yyyy 'at' h:mm a").format(payment.createdAt);
-    final roundedBalance = (payment.balance * 100).round() / 100;
 
     String formatPeriod(Payment p) {
       final from = '${p.fromMonth} ${p.fromYear}';
@@ -152,19 +151,12 @@ class PaymentDetailsContent extends StatelessWidget {
             ],
           ),
           const Divider(color: kSubtleText, height: 24),
-          _buildDetailRow(icon: Icons.person, label: 'Payer', value: payment.name),
+          _buildDetailRow(icon: Icons.person, label: 'Name', value: payment.name),
           _buildDetailRow(icon: Icons.home_work, label: 'Unit', value: '${payment.block}-${payment.unit}'),
           _buildDetailRow(icon: Icons.phone, label: 'Phone', value: payment.phone),
           _buildDetailRow(icon: Icons.calendar_today, label: 'Period', value: formatPeriod(payment)),
           const Divider(color: kSubtleText, height: 32),
-          _buildAmountRow(label: 'Amount to Pay', amount: payment.amountToPay, color: kPrimaryText),
-          _buildAmountRow(label: 'Amount Received', amount: payment.amountReceived, color: kPrimaryText),
-          _buildAmountRow(
-            label: 'Balance',
-            amount: payment.balance,
-            color: roundedBalance <= 0 ? kGreenAccent : kAccentRed,
-            isBold: true,
-          ),
+          _buildAmountRow(label: 'Amount Paid', amount: payment.amountReceived, color: kPrimaryText, isBold: true),
           const SizedBox(height: 24),
           Center(child: Text('Paid on: $formattedDate', style: const TextStyle(color: kSubtleText, fontSize: 12)))
         ],

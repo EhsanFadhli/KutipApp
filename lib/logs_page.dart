@@ -68,35 +68,54 @@ class _LogsPageState extends State<LogsPage> {
                             ),
                           )
                         : Expanded(
-                            child: ListView.builder(
+                            child: ListView.separated(
                               padding: EdgeInsets.zero,
                               itemCount: _logs.length,
                               itemBuilder: (context, index) {
                                 final log = _logs[index];
                                 final parts = log.action.split(' - ');
-                                final action = parts[0];
-                                final amount = parts.length > 1 ? parts[1] : null;
+                                String action = parts[0];
+                                final String? amount = parts.length > 1 ? parts[1] : null;
+
+                                Color amountColor = kGreenAccent; // Default color
+                                Widget? trailing;
+
+                                bool isArchive = action.contains('Archived');
+                                bool isSetFee = action.contains('Set monthly fee');
+
+                                if (isArchive) {
+                                  amountColor = kAccentRed;
+                                }
+
+                                if (isSetFee && amount != null) {
+                                  action = 'Monthly Fee Set to $amount';
+                                  trailing = null; // Remove trailing widget for this specific log
+                                } else if (amount != null) {
+                                  trailing = Text(
+                                    amount,
+                                    style: TextStyle(
+                                      color: amountColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  );
+                                }
 
                                 return ListTile(
-                                  contentPadding: EdgeInsets.zero,
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
                                   leading: const Icon(Icons.history, color: kPrimaryBlue),
                                   title: Text(action, style: const TextStyle(color: kPrimaryText)),
                                   subtitle: Text(
                                     DateFormat.yMMMd().add_jm().format(log.timestamp),
                                     style: const TextStyle(color: kSubtleText),
                                   ),
-                                  trailing: amount != null
-                                      ? Text(
-                                          amount,
-                                          style: const TextStyle(
-                                            color: kGreenAccent,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        )
-                                      : null,
+                                  trailing: trailing,
                                 );
                               },
+                              separatorBuilder: (context, index) => Divider(
+                                color: kSubtleText.withOpacity(0.2),
+                                height: 1,
+                              ),
                             ),
                           ),
                   ],
