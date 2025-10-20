@@ -363,7 +363,7 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
   String _formatCurrency(int amountInCents) {
     final format = NumberFormat.currency(
       locale: 'en_MY',
-      symbol: 'RM',
+      symbol: '', // No symbol here
       decimalDigits: 2,
     );
     return format.format(amountInCents / 100.0);
@@ -387,95 +387,133 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
           ),
           const SizedBox(height: 20),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _feeController,
-                  focusNode: _feeFocusNode,
-                  enabled: _isEditing,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    CurrencyInputFormatter(),
-                  ],
+              const Text(
+                'RM',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: kPrimaryText,
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (_isEditing)
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: kBackground.withAlpha(100),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      controller: _feeController,
+                      focusNode: _feeFocusNode,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        CurrencyInputFormatter(),
+                      ],
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: kPrimaryText,
+                        fontFamily: 'Inter',
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  _feeController.text,
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: kPrimaryText,
-                    fontFamily: 'Inter',
                   ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                  ),
-                  textAlign: TextAlign.start,
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 20),
           if (_isEditing)
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _cancelEdit,
-                    style: OutlinedButton.styleFrom(
-                        foregroundColor: kPrimaryText,
-                        side: const BorderSide(color: kSubtleText),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        )),
-                    child: const Text('Cancel'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _isFeeChanged ? _saveFee : null,
-                    icon: const Icon(Icons.check_circle),
-                    label: const Text('Set'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryBlue,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: kPrimaryBlue.withAlpha(128),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            )
+            _buildActionButtons()
           else
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _promptEdit,
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                ),
+            _buildEditButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: _cancelEdit,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: kPrimaryText,
+              side: const BorderSide(color: kSubtleText),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
               ),
             ),
-        ],
+            child: const Text('Cancel'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _isFeeChanged ? _saveFee : null,
+            icon: const Icon(Icons.check_circle),
+            label: const Text('Set'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimaryBlue,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: kPrimaryBlue.withAlpha(128),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _promptEdit,
+        icon: const Icon(Icons.edit),
+        label: const Text('Edit'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: kPrimaryBlue,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+        ),
       ),
     );
   }

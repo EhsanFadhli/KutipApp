@@ -378,7 +378,7 @@ class CurrencyInputFormatter extends TextInputFormatter {
 
     final format = NumberFormat.currency(
       locale: 'en_MY',
-      symbol: 'RM ',
+      symbol: '',
       decimalDigits: 2,
     );
     String newText = format.format(value / 100.0);
