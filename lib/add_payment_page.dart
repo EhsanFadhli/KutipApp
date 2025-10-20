@@ -36,20 +36,6 @@ class PhoneNumberInputFormatter extends TextInputFormatter {
   }
 }
 
-class DecimalTextInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    final regExp = RegExp(r'^\d*\.?\d*$');
-    final String newString = regExp.stringMatch(newValue.text) ?? oldValue.text;
-    return TextEditingValue(
-      text: newString,
-      selection: TextSelection.collapsed(offset: newString.length),
-    );
-  }
-}
-
-
 class AddPaymentPage extends StatefulWidget {
   const AddPaymentPage({super.key});
 
@@ -90,7 +76,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     });
   }
 
-    @override
+  @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
@@ -98,7 +84,6 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     _amountReceivedController.dispose();
     super.dispose();
   }
-
 
   void _calculateAmountToPay() {
     if (_fromMonth != null && _fromYear != null && _untilMonth != null && _untilYear != null) {
@@ -131,7 +116,10 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
   }
 
   void _calculateBalance() {
-    final amountReceived = double.tryParse(_amountReceivedController.text) ?? 0.0;
+    final text = _amountReceivedController.text;
+    final digitsOnly = text.replaceAll(RegExp(r'[^0-9]'), '');
+    final amountReceivedInCents = int.tryParse(digitsOnly) ?? 0;
+    final amountReceived = amountReceivedInCents / 100.0;
     setState(() {
       _balance = amountReceived - _amountToPay;
     });
@@ -139,7 +127,11 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
 
   Future<void> _savePayment() async {
     if (_formKey.currentState!.validate()) {
-      final amountReceived = double.tryParse(_amountReceivedController.text) ?? 0.0;
+      final text = _amountReceivedController.text;
+      final digitsOnly = text.replaceAll(RegExp(r'[^0-9]'), '');
+      final amountReceivedInCents = int.tryParse(digitsOnly) ?? 0;
+      final amountReceived = amountReceivedInCents / 100.0;
+
       final newPayment = Payment(
         name: _nameController.text,
         phone: _phoneController.text,
@@ -335,17 +327,9 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
           style: TextStyle(color: kSubtleText, fontSize: 16),
         ),
         const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          decoration: BoxDecoration(
-            color: kBackground,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(_amountToPay),
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: kPrimaryText),
-          ),
+        Text(
+          NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(_amountToPay),
+          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: kPrimaryText),
         ),
       ],
     );
@@ -355,25 +339,29 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     return TextFormField(
       controller: controller,
       onChanged: (_) => _calculateBalance(),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [DecimalTextInputFormatter()],
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly, CurrencyInputFormatter()],
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: const Padding(
-          padding: EdgeInsets.symmetric(vertical: 14.0, horizontal: 12.0),
-          child: Text('RM', style: TextStyle(color: kSubtleText, fontSize: 16)),
-        ),
         filled: true,
         fillColor: kBackground,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) return 'Please enter an amount';
-        if (double.tryParse(value) == null) return 'Please enter a valid number';
+        final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+        if (int.tryParse(digitsOnly) == null) return 'Please enter a valid number';
         return null;
       },
+      textAlign: TextAlign.start,
+      style: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: kPrimaryText,
+      ),
     );
   }
+
 
   Widget _buildBalanceDisplay() {
     final bool isEffectivelyZero = _balance.abs() < 0.005;

@@ -208,6 +208,26 @@ class PaymentDetailsContent extends StatelessWidget {
 }
 
 
+class CurrencyInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.selection.baseOffset == 0) {
+      return newValue;
+    }
+
+    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    int value = int.tryParse(digitsOnly) ?? 0;
+
+    final format = NumberFormat.currency(locale: 'en_MY', symbol: 'RM ', decimalDigits: 2);
+    String newText = format.format(value / 100.0);
+
+    return newValue.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
+  }
+}
+
 // Custom formatter to allow only two decimal places
 class DecimalTextInputFormatter extends TextInputFormatter {
   @override

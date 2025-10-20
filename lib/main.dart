@@ -11,8 +11,6 @@ import 'package:myapp/previous_payments_page.dart';
 import 'package:myapp/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
-
 void main() {
   runApp(const MyApp());
 }
@@ -99,7 +97,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-
   void _navigateToAddPayment() async {
     final result = await Navigator.push(
       context,
@@ -181,8 +178,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-
-
 class TotalCashCard extends StatelessWidget {
   final double totalCash;
   final VoidCallback onCashHanded;
@@ -244,7 +239,7 @@ class MonthlyFeeCard extends StatefulWidget {
 class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
   final TextEditingController _feeController = TextEditingController();
   static const String _storageKey = "monthly_fee";
-  double _savedFee = 0.0;
+  int _savedFeeInCents = 0;
   bool _isFeeChanged = false;
 
   @override
@@ -255,16 +250,11 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
   }
 
   void _onFeeChanged() {
-    final currentFee = double.tryParse(_feeController.text);
-    bool hasChanged;
+    final text = _feeController.text;
+    final digitsOnly = text.replaceAll(RegExp(r'[^0-9]'), '');
+    final currentFeeInCents = int.tryParse(digitsOnly) ?? 0;
 
-    if (currentFee == null) {
-      hasChanged = !(_feeController.text.isEmpty && _savedFee == 0.0);
-    } else {
-      final roundedCurrent = (currentFee * 100).round();
-      final roundedSaved = (_savedFee * 100).round();
-      hasChanged = roundedCurrent != roundedSaved;
-    }
+    final hasChanged = currentFeeInCents != _savedFeeInCents;
 
     if (hasChanged != _isFeeChanged) {
       setState(() {
@@ -277,31 +267,35 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
     final prefs = await SharedPreferences.getInstance();
     final double fee = prefs.getDouble(_storageKey) ?? 0.0;
     setState(() {
-      _savedFee = fee;
-      _feeController.text = fee.toStringAsFixed(2);
+      _savedFeeInCents = (fee * 100).round();
+      _feeController.text = _formatCurrency(_savedFeeInCents);
       _isFeeChanged = false;
     });
   }
 
   Future<void> _saveFee() async {
     final prefs = await SharedPreferences.getInstance();
-    final double? fee = double.tryParse(_feeController.text);
-    if (fee != null) {
-      await prefs.setDouble(_storageKey, fee);
-      final formattedFee = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(fee);
-      await LogService.logAction('Set monthly fee - $formattedFee');
-      setState(() {
-        _savedFee = fee;
-        _isFeeChanged = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Monthly Fee Saved!')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid amount')),
-      );
-    }
+    final text = _feeController.text;
+    final digitsOnly = text.replaceAll(RegExp(r'[^0-9]'), '');
+    final feeInCents = int.tryParse(digitsOnly) ?? 0;
+    final double fee = feeInCents / 100.0;
+
+    await prefs.setDouble(_storageKey, fee);
+    final formattedFee = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(fee);
+    await LogService.logAction('Set monthly fee - $formattedFee');
+    setState(() {
+      _savedFeeInCents = feeInCents;
+      _isFeeChanged = false;
+    });
+    FocusScope.of(context).unfocus();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Monthly Fee Saved!')),
+    );
+  }
+
+  String _formatCurrency(int amountInCents) {
+    final format = NumberFormat.currency(locale: 'en_MY', symbol: 'RM', decimalDigits: 2);
+    return format.format(amountInCents / 100.0);
   }
 
   @override
@@ -323,46 +317,43 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
           const SizedBox(height: 20),
           Row(
             children: [
-              const Text(
-                'RM',
-                style: TextStyle(
-                    fontSize: 32,
-                    color: kSubtleText,
-                    fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: TextField(
                   controller: _feeController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [DecimalTextInputFormatter()],
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, CurrencyInputFormatter()],
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: kPrimaryText,
+                    fontFamily: 'Inter',
                   ),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     isDense: true,
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: _isFeeChanged ? _saveFee : null,
-                icon: const Icon(Icons.check_circle),
-                label: const Text('Set'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryBlue,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: kPrimaryBlue.withOpacity(0.5),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                  textAlign: TextAlign.start,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isFeeChanged ? _saveFee : null,
+              icon: const Icon(Icons.check_circle),
+              label: const Text('Set'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryBlue,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: kPrimaryBlue.withOpacity(0.5),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+              ),
+            ),
           ),
         ],
       ),
@@ -376,6 +367,7 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
     super.dispose();
   }
 }
+
 
 
 // --- Recent Payments Section ---
