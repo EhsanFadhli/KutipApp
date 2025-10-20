@@ -205,6 +205,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                     label: 'Name',
                     controller: _nameController,
                     icon: Icons.person,
+                    textCapitalization: TextCapitalization.words,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -325,11 +326,13 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     required IconData icon,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
+      textCapitalization: textCapitalization,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: kSubtleText),
