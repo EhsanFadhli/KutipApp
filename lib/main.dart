@@ -320,6 +320,7 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
               Expanded(
                 child: TextField(
                   controller: _feeController,
+                  autofocus: false,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly, CurrencyInputFormatter()],
                   style: const TextStyle(
