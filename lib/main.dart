@@ -77,6 +77,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return CountdownConfirmationDialog(
+          title: 'Archive Payments',
+          content:
+              'This will archive all recent payments and reset the collected cash amount. This action cannot be undone and will be logged.',
           onConfirm: () async {
             final prefs = await SharedPreferences.getInstance();
             final List<String> recentPaymentsJson =
@@ -285,46 +288,20 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
   static const String _storageKey = "monthly_fee";
   int _savedFeeInCents = 0;
   bool _isFeeChanged = false;
+  bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
     _loadFee();
     _feeController.addListener(_onFeeChanged);
-    _feeFocusNode.addListener(_onFocusChange);
-  }
-
-  void _onFocusChange() {
-    if (_feeFocusNode.hasFocus) {
-      // When the field gains focus, select all the text.
-      _feeController.selection = TextSelection(
-        baseOffset: 0,
-        extentOffset: _feeController.text.length,
-      );
-    } else {
-      // When focus is lost, we introduce a small delay.
-      // This allows the button's onPressed to fire before we check
-      // if we should revert the text.
-      Future.delayed(const Duration(milliseconds: 100), () {
-        // If a save hasn't happened, _isFeeChanged will still be true.
-        // We also need to check if the widget is still in the tree.
-        if (mounted && _isFeeChanged) {
-          setState(() {
-            _feeController.text = _formatCurrency(_savedFeeInCents);
-            _isFeeChanged = false;
-          });
-        }
-      });
-    }
   }
 
   void _onFeeChanged() {
     final text = _feeController.text;
     final digitsOnly = text.replaceAll(RegExp(r'[^0-9]'), '');
     final currentFeeInCents = int.tryParse(digitsOnly) ?? 0;
-
     final hasChanged = currentFeeInCents != _savedFeeInCents;
-
     if (hasChanged != _isFeeChanged) {
       setState(() {
         _isFeeChanged = hasChanged;
@@ -355,15 +332,32 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
       symbol: 'RM',
     ).format(fee);
     await LogService.logAction('Set monthly fee - $formattedFee');
-    setState(() {
-      _savedFeeInCents = feeInCents;
-      _isFeeChanged = false;
-    });
 
     if (mounted) {
       FocusScope.of(context).unfocus();
       showSuccessSnackBar(context, 'Monthly Fee Saved!');
+      setState(() {
+        _savedFeeInCents = feeInCents;
+        _isEditing = false;
+        _isFeeChanged = false;
+      });
     }
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      _feeController.text = _formatCurrency(_savedFeeInCents);
+      _isEditing = false;
+      _isFeeChanged = false;
+      FocusScope.of(context).unfocus();
+    });
+  }
+
+  void _promptEdit() {
+    setState(() {
+      _isEditing = true;
+    });
+    _feeFocusNode.requestFocus();
   }
 
   String _formatCurrency(int amountInCents) {
@@ -398,7 +392,7 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
                 child: TextField(
                   controller: _feeController,
                   focusNode: _feeFocusNode,
-                  autofocus: false,
+                  enabled: _isEditing,
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -421,27 +415,66 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
             ],
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isFeeChanged ? _saveFee : null,
-              icon: const Icon(Icons.check_circle),
-              label: const Text('Set'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryBlue,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: kPrimaryBlue.withAlpha(128),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+          if (_isEditing)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancelEdit,
+                    style: OutlinedButton.styleFrom(
+                        foregroundColor: kPrimaryText,
+                        side: const BorderSide(color: kSubtleText),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        )),
+                    child: const Text('Cancel'),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isFeeChanged ? _saveFee : null,
+                    icon: const Icon(Icons.check_circle),
+                    label: const Text('Set'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimaryBlue,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: kPrimaryBlue.withAlpha(128),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _promptEdit,
+                icon: const Icon(Icons.edit),
+                label: const Text('Edit'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kPrimaryBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -451,7 +484,6 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
   void dispose() {
     _feeController.removeListener(_onFeeChanged);
     _feeController.dispose();
-    _feeFocusNode.removeListener(_onFocusChange);
     _feeFocusNode.dispose();
     super.dispose();
   }
@@ -520,9 +552,16 @@ class RecentPaymentsSection extends StatelessWidget {
 }
 
 class CountdownConfirmationDialog extends StatefulWidget {
-  final Future<void> Function() onConfirm;
+  final Future<void> Function()? onConfirm;
+  final String title;
+  final String content;
 
-  const CountdownConfirmationDialog({super.key, required this.onConfirm});
+  const CountdownConfirmationDialog({
+    super.key,
+    this.onConfirm,
+    required this.title,
+    required this.content,
+  });
 
   @override
   State<CountdownConfirmationDialog> createState() =>
@@ -566,12 +605,12 @@ class _CountdownConfirmationDialogState
     return AlertDialog(
       backgroundColor: kCardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
-        'Confirm Action',
-        style: TextStyle(color: kPrimaryText, fontWeight: FontWeight.bold),
+      title: Text(
+        widget.title,
+        style: const TextStyle(color: kPrimaryText, fontWeight: FontWeight.bold),
       ),
       content: Text(
-        'This will archive all recent payments and reset the collected cash amount. This action cannot be undone.',
+        widget.content,
         style: TextStyle(color: kSubtleText),
       ),
       actions: <Widget>[
@@ -582,16 +621,17 @@ class _CountdownConfirmationDialogState
         ElevatedButton(
           onPressed: isConfirmEnabled
               ? () async {
-                  await widget.onConfirm();
-
+                  if (widget.onConfirm != null) {
+                    await widget.onConfirm!();
+                  }
                   if (mounted) {
                     navigator.pop(true);
                   }
                 }
               : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: kAccentRed,
-            disabledBackgroundColor: kAccentRed.withAlpha(128),
+            backgroundColor: kPrimaryBlue,
+            disabledBackgroundColor: kPrimaryBlue.withAlpha(128),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
