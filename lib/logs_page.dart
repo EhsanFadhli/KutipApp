@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/log_model.dart';
@@ -58,7 +57,10 @@ class _LogsPageState extends State<LogsPage> {
                               padding: EdgeInsets.symmetric(vertical: 32.0),
                               child: Text(
                                 'No logs found.',
-                                style: TextStyle(color: kSubtleText, fontSize: 16),
+                                style: TextStyle(
+                                  color: kSubtleText,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                           )
@@ -70,13 +72,18 @@ class _LogsPageState extends State<LogsPage> {
                                 final log = _logs[index];
                                 final parts = log.action.split(' - ');
                                 String action = parts[0];
-                                final String? amount = parts.length > 1 ? parts[1] : null;
+                                final String? amount = parts.length > 1
+                                    ? parts[1]
+                                    : null;
 
-                                Color amountColor = kGreenAccent; // Default color
+                                Color amountColor =
+                                    kGreenAccent; // Default color
                                 Widget? trailing;
 
                                 bool isArchive = action.contains('Archived');
-                                bool isSetFee = action.contains('Set monthly fee');
+                                bool isSetFee = action.contains(
+                                  'Set monthly fee',
+                                );
 
                                 if (isArchive) {
                                   amountColor = kAccentRed;
@@ -84,7 +91,8 @@ class _LogsPageState extends State<LogsPage> {
 
                                 if (isSetFee && amount != null) {
                                   action = 'Monthly Fee Set to $amount';
-                                  trailing = null; // Remove trailing widget for this specific log
+                                  trailing =
+                                      null; // Remove trailing widget for this specific log
                                 } else if (amount != null) {
                                   trailing = Text(
                                     amount,
@@ -97,18 +105,28 @@ class _LogsPageState extends State<LogsPage> {
                                 }
 
                                 return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  leading: const Icon(Icons.history, color: kPrimaryBlue),
-                                  title: Text(action, style: const TextStyle(color: kPrimaryText)),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 8.0,
+                                  ),
+                                  leading: const Icon(
+                                    Icons.history,
+                                    color: kPrimaryBlue,
+                                  ),
+                                  title: Text(
+                                    action,
+                                    style: const TextStyle(color: kPrimaryText),
+                                  ),
                                   subtitle: Text(
-                                    DateFormat.yMMMd().add_jm().format(log.timestamp),
+                                    DateFormat.yMMMd().add_jm().format(
+                                      log.timestamp,
+                                    ),
                                     style: const TextStyle(color: kSubtleText),
                                   ),
                                   trailing: trailing,
                                 );
                               },
                               separatorBuilder: (context, index) => Divider(
-                                color: kSubtleText.withOpacity(0.2),
+                                color: kSubtleText.withAlpha(51),
                                 height: 1,
                               ),
                             ),

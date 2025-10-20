@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -7,26 +6,33 @@ import 'package:myapp/payment_model.dart';
 import 'package:myapp/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 // Custom formatter for phone number
 class PhoneNumberInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), '');
     final newTextLength = digitsOnly.length;
 
     var newString = StringBuffer();
     if (newTextLength > 0) {
-      newString.write(digitsOnly.substring(0, newTextLength > 3 ? 3 : newTextLength));
+      newString.write(
+        digitsOnly.substring(0, newTextLength > 3 ? 3 : newTextLength),
+      );
     }
     if (newTextLength > 3) {
       newString.write('-');
-      newString.write(digitsOnly.substring(3, newTextLength > 6 ? 6 : newTextLength));
+      newString.write(
+        digitsOnly.substring(3, newTextLength > 6 ? 6 : newTextLength),
+      );
     }
     if (newTextLength > 6) {
       newString.write(' ');
-      newString.write(digitsOnly.substring(6, newTextLength > 11 ? 11 : newTextLength));
+      newString.write(
+        digitsOnly.substring(6, newTextLength > 11 ? 11 : newTextLength),
+      );
     }
 
     return TextEditingValue(
@@ -86,14 +92,18 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
   }
 
   void _calculateAmountToPay() {
-    if (_fromMonth != null && _fromYear != null && _untilMonth != null && _untilYear != null) {
+    if (_fromMonth != null &&
+        _fromYear != null &&
+        _untilMonth != null &&
+        _untilYear != null) {
       final months = DateFormat.MMMM().dateSymbols.MONTHS;
       final fromMonthIndex = months.indexOf(_fromMonth!);
       final untilMonthIndex = months.indexOf(_untilMonth!);
       final fromYearInt = int.parse(_fromYear!);
       final untilYearInt = int.parse(_untilYear!);
 
-      if (fromYearInt > untilYearInt || (fromYearInt == untilYearInt && fromMonthIndex > untilMonthIndex)) {
+      if (fromYearInt > untilYearInt ||
+          (fromYearInt == untilYearInt && fromMonthIndex > untilMonthIndex)) {
         setState(() {
           _amountToPay = 0;
           _calculateBalance();
@@ -101,7 +111,10 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         return;
       }
 
-      final monthDifference = (untilYearInt - fromYearInt) * 12 + (untilMonthIndex - fromMonthIndex) + 1;
+      final monthDifference =
+          (untilYearInt - fromYearInt) * 12 +
+          (untilMonthIndex - fromMonthIndex) +
+          1;
 
       setState(() {
         _amountToPay = monthDifference * _monthlyFee;
@@ -152,8 +165,13 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
       paymentsJson.add(newPayment.toJson());
       await prefs.setStringList('payments', paymentsJson);
 
-      final formattedAmount = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(amountReceived);
-      await LogService.logAction('Added payment for ${_nameController.text} - $formattedAmount');
+      final formattedAmount = NumberFormat.currency(
+        locale: 'en_MY',
+        symbol: 'RM',
+      ).format(amountReceived);
+      await LogService.logAction(
+        'Added payment for ${_nameController.text} - $formattedAmount',
+      );
 
       if (mounted) {
         showSuccessSnackBar(context, 'Payment saved successfully!');
@@ -167,7 +185,10 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     return Scaffold(
       backgroundColor: kBackground,
       appBar: AppBar(
-        title: const Text('Add New Payment', style: TextStyle(color: kPrimaryText)),
+        title: const Text(
+          'Add New Payment',
+          style: TextStyle(color: kPrimaryText),
+        ),
         backgroundColor: kBackground,
         elevation: 0,
       ),
@@ -180,30 +201,38 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
               _buildSectionCard(
                 title: 'Info',
                 children: [
-                  _buildTextField(label: 'Name', controller: _nameController, icon: Icons.person),
+                  _buildTextField(
+                    label: 'Name',
+                    controller: _nameController,
+                    icon: Icons.person,
+                  ),
                   const SizedBox(height: 16),
                   _buildTextField(
-                      label: 'Phone',
-                      controller: _phoneController,
-                      icon: Icons.phone,
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        PhoneNumberInputFormatter(),
-                      ]),
+                    label: 'Phone',
+                    controller: _phoneController,
+                    icon: Icons.phone,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      PhoneNumberInputFormatter(),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(child: _buildBlockDropdown()),
                       const SizedBox(width: 16),
                       Expanded(
-                          child: _buildTextField(
-                        label: 'Unit',
-                        controller: _unitController,
-                        icon: Icons.home,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      )),
+                        child: _buildTextField(
+                          label: 'Unit',
+                          controller: _unitController,
+                          icon: Icons.home,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -218,12 +247,19 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                 title: 'Amount',
                 titleAccessory: Text(
                   '${NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(_monthlyFee)}/month',
-                  style: const TextStyle(color: kSubtleText, fontSize: 14, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    color: kSubtleText,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 children: [
                   _buildAmountToPayDisplay(),
                   const SizedBox(height: 16),
-                  _buildAmountField(label: 'Amount Received', controller: _amountReceivedController),
+                  _buildAmountField(
+                    label: 'Amount Received',
+                    controller: _amountReceivedController,
+                  ),
                   const SizedBox(height: 16),
                   _buildBalanceDisplay(),
                 ],
@@ -235,9 +271,14 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                   backgroundColor: kPrimaryBlue,
                   foregroundColor: kPrimaryText,
                   minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Save Payment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Save Payment',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -246,8 +287,11 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     );
   }
 
-  Widget _buildSectionCard(
-      {required String title, required List<Widget> children, Widget? titleAccessory}) {
+  Widget _buildSectionCard({
+    required String title,
+    required List<Widget> children,
+    Widget? titleAccessory,
+  }) {
     return ElevatedCard(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -275,12 +319,13 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     );
   }
 
-  Widget _buildTextField(
-      {required String label,
-      required TextEditingController controller,
-      required IconData icon,
-      TextInputType? keyboardType,
-      List<TextInputFormatter>? inputFormatters}) {
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -290,21 +335,26 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         prefixIcon: Icon(icon, color: kSubtleText),
         filled: true,
         fillColor: kBackground,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
-      validator: (value) => (value == null || value.isEmpty) ? 'Please enter a $label' : null,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter a $label';
+        }
+        return null;
+      },
     );
   }
 
   Widget _buildBlockDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedBlock,
+      initialValue: _selectedBlock,
       hint: const Text('Block', style: TextStyle(color: kSubtleText)),
       items: ['C', 'D'].map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
+        return DropdownMenuItem<String>(value: value, child: Text(value));
       }).toList(),
       onChanged: (newValue) {
         setState(() {
@@ -315,9 +365,17 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         prefixIcon: const Icon(Icons.location_city, color: kSubtleText),
         filled: true,
         fillColor: kBackground,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
-      validator: (value) => value == null ? 'Please select a block' : null,
+      validator: (value) {
+        if (value == null) {
+          return 'Please select a block';
+        }
+        return null;
+      },
     );
   }
 
@@ -331,29 +389,49 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(_amountToPay),
-          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: kPrimaryText),
+          NumberFormat.currency(
+            locale: 'en_MY',
+            symbol: 'RM ',
+          ).format(_amountToPay),
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: kPrimaryText,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildAmountField({required String label, required TextEditingController controller}) {
+  Widget _buildAmountField({
+    required String label,
+    required TextEditingController controller,
+  }) {
     return TextFormField(
       controller: controller,
       onChanged: (_) => _calculateBalance(),
       keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly, CurrencyInputFormatter()],
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        CurrencyInputFormatter(),
+      ],
       decoration: InputDecoration(
         labelText: label,
         filled: true,
         fillColor: kBackground,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
       validator: (value) {
-        if (value == null || value.isEmpty) return 'Please enter an amount';
+        if (value == null || value.isEmpty) {
+          return 'Please enter an amount';
+        }
         final digitsOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
-        if (int.tryParse(digitsOnly) == null) return 'Please enter a valid number';
+        if (int.tryParse(digitsOnly) == null) {
+          return 'Please enter a valid number';
+        }
         return null;
       },
       textAlign: TextAlign.start,
@@ -364,7 +442,6 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
       ),
     );
   }
-
 
   Widget _buildBalanceDisplay() {
     final bool isEffectivelyZero = _balance.abs() < 0.005;
@@ -379,7 +456,10 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('Balance', style: TextStyle(fontSize: 18, color: kSubtleText)),
+          const Text(
+            'Balance',
+            style: TextStyle(fontSize: 18, color: kSubtleText),
+          ),
           Text(
             'RM ${displayBalance.toStringAsFixed(2)}',
             style: TextStyle(
@@ -400,90 +480,119 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         Row(
           children: [
             Expanded(
-                child: _buildMonthDropdown(
-                    label: 'From',
-                    value: _fromMonth,
-                    onChanged: (val) {
-                      setState(() => _fromMonth = val);
-                      _calculateAmountToPay();
-                    })),
+              child: _buildMonthDropdown(
+                label: 'From',
+                value: _fromMonth,
+                onChanged: (val) {
+                  setState(() => _fromMonth = val);
+                  _calculateAmountToPay();
+                },
+              ),
+            ),
             const SizedBox(width: 16),
             Expanded(
-                child: _buildYearDropdown(
-                    label: 'Year',
-                    value: _fromYear,
-                    onChanged: (val) {
-                      setState(() => _fromYear = val);
-                      _calculateAmountToPay();
-                    })),
+              child: _buildYearDropdown(
+                label: 'Year',
+                value: _fromYear,
+                onChanged: (val) {
+                  setState(() => _fromYear = val);
+                  _calculateAmountToPay();
+                },
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
-                child: _buildMonthDropdown(
-                    label: 'Until',
-                    value: _untilMonth,
-                    onChanged: (val) {
-                      setState(() => _untilMonth = val);
-                      _calculateAmountToPay();
-                    })),
+              child: _buildMonthDropdown(
+                label: 'Until',
+                value: _untilMonth,
+                onChanged: (val) {
+                  setState(() => _untilMonth = val);
+                  _calculateAmountToPay();
+                },
+              ),
+            ),
             const SizedBox(width: 16),
             Expanded(
-                child: _buildYearDropdown(
-                    label: 'Year',
-                    value: _untilYear,
-                    onChanged: (val) {
-                      setState(() => _untilYear = val);
-                      _calculateAmountToPay();
-                    })),
+              child: _buildYearDropdown(
+                label: 'Year',
+                value: _untilYear,
+                onChanged: (val) {
+                  setState(() => _untilYear = val);
+                  _calculateAmountToPay();
+                },
+              ),
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildMonthDropdown({required String label, String? value, required ValueChanged<String?> onChanged}) {
+  Widget _buildMonthDropdown({
+    required String label,
+    String? value,
+    required ValueChanged<String?> onChanged,
+  }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       hint: Text(label, style: const TextStyle(color: kSubtleText)),
       items: DateFormat.MMMM().dateSymbols.MONTHS.map((String month) {
-        return DropdownMenuItem<String>(
-          value: month,
-          child: Text(month),
-        );
+        return DropdownMenuItem<String>(value: month, child: Text(month));
       }).toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
         filled: true,
         fillColor: kBackground,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
-      validator: (val) => val == null ? 'Please select a month' : null,
+      validator: (val) {
+        if (val == null) {
+          return 'Please select a month';
+        }
+        return null;
+      },
     );
   }
 
-  Widget _buildYearDropdown({required String label, String? value, required ValueChanged<String?> onChanged}) {
+  Widget _buildYearDropdown({
+    required String label,
+    String? value,
+    required ValueChanged<String?> onChanged,
+  }) {
     final currentYear = DateTime.now().year;
-    final years = List<String>.generate(11, (index) => (currentYear - 5 + index).toString());
+    final years = List<String>.generate(
+      11,
+      (index) => (currentYear - 5 + index).toString(),
+    );
 
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       hint: Text(label, style: const TextStyle(color: kSubtleText)),
       items: years.map((String year) {
-        return DropdownMenuItem<String>(
-          value: year,
-          child: Text(year),
-        );
+        return DropdownMenuItem<String>(value: year, child: Text(year));
       }).toList(),
       onChanged: onChanged,
       decoration: InputDecoration(
         filled: true,
         fillColor: kBackground,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
       ),
-      validator: (val) => val == null ? 'Please select a year' : null,
+      validator: (val) {
+        if (val == null) {
+          return 'Please select a year';
+        }
+        return null;
+      },
     );
   }
 }

@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 class Payment {
@@ -56,7 +55,9 @@ class Payment {
       amountToPay: (map['amountToPay'] as num?)?.toDouble() ?? 0.0,
       amountReceived: (map['amountReceived'] as num?)?.toDouble() ?? 0.0,
       balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
-      createdAt: DateTime.parse(map['createdAt']?.toString() ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+        map['createdAt']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
       fromMonth: map['fromMonth']?.toString() ?? '',
       untilMonth: map['untilMonth']?.toString() ?? '',
       fromYear: map['fromYear']?.toString() ?? '',
@@ -64,8 +65,8 @@ class Payment {
     );
   }
 
-    String toJson() => json.encode(toMap());
+  String toJson() => json.encode(toMap());
 
-  factory Payment.fromJson(String source) => Payment.fromMap(json.decode(source));
-
+  factory Payment.fromJson(String source) =>
+      Payment.fromMap(json.decode(source));
 }

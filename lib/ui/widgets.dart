@@ -1,9 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/payment_model.dart';
-
 
 // --- Professional Color Palette ---
 const Color kPrimaryBlue = Color(0xFF0D63F8);
@@ -20,11 +18,11 @@ void showSuccessSnackBar(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: _AnimatedSnackBarContent(message: message),
-      backgroundColor: const Color(0xFF2E7D32), // Use a specific dark green for the SnackBar background
+      backgroundColor: const Color(
+        0xFF2E7D32,
+      ), // Use a specific dark green for the SnackBar background
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       margin: const EdgeInsets.all(16.0),
     ),
   );
@@ -36,10 +34,12 @@ class _AnimatedSnackBarContent extends StatefulWidget {
   const _AnimatedSnackBarContent({required this.message});
 
   @override
-  _AnimatedSnackBarContentState createState() => _AnimatedSnackBarContentState();
+  _AnimatedSnackBarContentState createState() =>
+      _AnimatedSnackBarContentState();
 }
 
-class _AnimatedSnackBarContentState extends State<_AnimatedSnackBarContent> with SingleTickerProviderStateMixin {
+class _AnimatedSnackBarContentState extends State<_AnimatedSnackBarContent>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _offsetAnimation;
   late Animation<double> _fadeAnimation;
@@ -54,14 +54,8 @@ class _AnimatedSnackBarContentState extends State<_AnimatedSnackBarContent> with
     _offsetAnimation = Tween<Offset>(
       begin: const Offset(0.0, 0.5),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
   }
 
@@ -84,7 +78,10 @@ class _AnimatedSnackBarContentState extends State<_AnimatedSnackBarContent> with
             Expanded(
               child: Text(
                 widget.message,
-                style: const TextStyle(color: kPrimaryText, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: kPrimaryText,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -107,12 +104,12 @@ class ElevatedCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withAlpha(102),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: kPrimaryBlue.withOpacity(0.1),
+            color: kPrimaryBlue.withAlpha(26),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -148,15 +145,20 @@ class RecentPaymentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedAmount = NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(payment.amountReceived);
+    final formattedAmount = NumberFormat.currency(
+      locale: 'en_MY',
+      symbol: 'RM ',
+    ).format(payment.amountReceived);
     final blockAndUnit = '${payment.block}-${payment.unit}';
-    final initial = payment.name.isNotEmpty ? payment.name[0].toUpperCase() : '';
+    final initial = payment.name.isNotEmpty
+        ? payment.name[0].toUpperCase()
+        : '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: kBackground.withOpacity(0.5),
+        color: kBackground.withAlpha(128),
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Row(
@@ -165,17 +167,29 @@ class RecentPaymentTile extends StatelessWidget {
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: kPrimaryBlue.withOpacity(0.2),
+                backgroundColor: kPrimaryBlue.withAlpha(51),
                 foregroundColor: kPrimaryText,
-                child: Text(initial, style: const TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  initial,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(payment.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(
+                    payment.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(blockAndUnit, style: const TextStyle(color: kSubtleText, fontSize: 12)),
+                  Text(
+                    blockAndUnit,
+                    style: const TextStyle(color: kSubtleText, fontSize: 12),
+                  ),
                 ],
               ),
             ],
@@ -183,11 +197,21 @@ class RecentPaymentTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(formattedAmount, style: const TextStyle(color: kGreenAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                formattedAmount,
+                style: const TextStyle(
+                  color: kGreenAccent,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(_formatMonthRange(), style: const TextStyle(color: kSubtleText, fontSize: 12)),
+              Text(
+                _formatMonthRange(),
+                style: const TextStyle(color: kSubtleText, fontSize: 12),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -200,7 +224,9 @@ class PaymentDetailsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat("MMMM d, yyyy 'at' h:mm a").format(payment.createdAt);
+    final formattedDate = DateFormat(
+      "MMMM d, yyyy 'at' h:mm a",
+    ).format(payment.createdAt);
 
     String formatPeriod(Payment p) {
       final from = '${p.fromMonth} ${p.fromYear}';
@@ -212,7 +238,10 @@ class PaymentDetailsContent extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
         color: kCardBackground,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -221,42 +250,96 @@ class PaymentDetailsContent extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Payment Details', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: kPrimaryText)),
+              const Text(
+                'Payment Details',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: kPrimaryText,
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.close, color: kSubtleText),
                 onPressed: () => Navigator.of(context).pop(),
-              )
+              ),
             ],
           ),
           const Divider(color: kSubtleText, height: 24),
-          _buildDetailRow(icon: Icons.person, label: 'Name', value: payment.name),
-          _buildDetailRow(icon: Icons.home_work, label: 'Unit', value: '${payment.block}-${payment.unit}'),
-          _buildDetailRow(icon: Icons.phone, label: 'Phone', value: payment.phone),
-          _buildDetailRow(icon: Icons.calendar_today, label: 'Period', value: formatPeriod(payment)),
+          _buildDetailRow(
+            icon: Icons.person,
+            label: 'Name',
+            value: payment.name,
+          ),
+          _buildDetailRow(
+            icon: Icons.home_work,
+            label: 'Unit',
+            value: '${payment.block}-${payment.unit}',
+          ),
+          _buildDetailRow(
+            icon: Icons.phone,
+            label: 'Phone',
+            value: payment.phone,
+          ),
+          _buildDetailRow(
+            icon: Icons.calendar_today,
+            label: 'Period',
+            value: formatPeriod(payment),
+          ),
           const Divider(color: kSubtleText, height: 32),
-          _buildAmountRow(label: 'Amount Paid', amount: payment.amountReceived, color: kPrimaryText, isBold: true),
+          _buildAmountRow(
+            label: 'Amount Paid',
+            amount: payment.amountReceived,
+            color: kPrimaryText,
+            isBold: true,
+          ),
           const SizedBox(height: 24),
-          Center(child: Text('Paid on: $formattedDate', style: const TextStyle(color: kSubtleText, fontSize: 12)))
+          Center(
+            child: Text(
+              'Paid on: $formattedDate',
+              style: const TextStyle(color: kSubtleText, fontSize: 12),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow({required IconData icon, required String label, required String value}) {
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
           Icon(icon, color: kSubtleText, size: 18),
           const SizedBox(width: 16),
-          Expanded(child: Text(label, style: const TextStyle(color: kSubtleText, fontSize: 16))),
-          Text(value, style: const TextStyle(color: kPrimaryText, fontSize: 16, fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: kSubtleText, fontSize: 16),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: kPrimaryText,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildAmountRow({required String label, required double amount, required Color color, bool isBold = false}) {
+  Widget _buildAmountRow({
+    required String label,
+    required double amount,
+    required Color color,
+    bool isBold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -264,7 +347,10 @@ class PaymentDetailsContent extends StatelessWidget {
         children: [
           Text(label, style: const TextStyle(color: kSubtleText, fontSize: 16)),
           Text(
-            NumberFormat.currency(locale: 'en_MY', symbol: 'RM ').format(amount),
+            NumberFormat.currency(
+              locale: 'en_MY',
+              symbol: 'RM ',
+            ).format(amount),
             style: TextStyle(
               color: color,
               fontSize: isBold ? 20 : 18,
@@ -277,10 +363,12 @@ class PaymentDetailsContent extends StatelessWidget {
   }
 }
 
-
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     if (newValue.selection.baseOffset == 0) {
       return newValue;
     }
@@ -288,7 +376,11 @@ class CurrencyInputFormatter extends TextInputFormatter {
     final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
     int value = int.tryParse(digitsOnly) ?? 0;
 
-    final format = NumberFormat.currency(locale: 'en_MY', symbol: 'RM ', decimalDigits: 2);
+    final format = NumberFormat.currency(
+      locale: 'en_MY',
+      symbol: 'RM ',
+      decimalDigits: 2,
+    );
     String newText = format.format(value / 100.0);
 
     return newValue.copyWith(
@@ -301,7 +393,10 @@ class CurrencyInputFormatter extends TextInputFormatter {
 // Custom formatter to allow only two decimal places
 class DecimalTextInputFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     if (newValue.text.isEmpty) {
       return newValue;
     }

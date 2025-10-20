@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:myapp/payment_model.dart';
 import 'package:myapp/ui/widgets.dart';
@@ -24,8 +23,9 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
 
   Future<void> _loadPreviousPayments() async {
     final prefs = await SharedPreferences.getInstance();
-    final List<String> paymentsJson = prefs.getStringList('previous_payments') ?? [];
-    
+    final List<String> paymentsJson =
+        prefs.getStringList('previous_payments') ?? [];
+
     final List<Payment> loadedPayments = [];
     for (final p in paymentsJson) {
       try {
@@ -40,9 +40,11 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
         );
       }
     }
-    
-    loadedPayments.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Sort by most recent
-    
+
+    loadedPayments.sort(
+      (a, b) => b.createdAt.compareTo(a.createdAt),
+    ); // Sort by most recent
+
     if (mounted) {
       setState(() {
         _payments = loadedPayments;
@@ -65,7 +67,10 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
     return Scaffold(
       backgroundColor: kBackground,
       appBar: AppBar(
-        title: const Text('Previous Payments', style: TextStyle(color: kPrimaryText)),
+        title: const Text(
+          'Previous Payments',
+          style: TextStyle(color: kPrimaryText),
+        ),
         backgroundColor: kBackground,
         elevation: 0,
         leading: IconButton(
@@ -88,7 +93,10 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
                               padding: EdgeInsets.symmetric(vertical: 32.0),
                               child: Text(
                                 'No archived payments found.',
-                                style: TextStyle(color: kSubtleText, fontSize: 16),
+                                style: TextStyle(
+                                  color: kSubtleText,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                           )
@@ -99,7 +107,10 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
                               itemBuilder: (context, index) {
                                 final payment = _payments[index];
                                 return InkWell(
-                                  onTap: () => _showPaymentDetailsModal(context, payment),
+                                  onTap: () => _showPaymentDetailsModal(
+                                    context,
+                                    payment,
+                                  ),
                                   child: RecentPaymentTile(payment: payment),
                                 );
                               },

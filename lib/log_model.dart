@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 class LogEntry {
@@ -8,10 +7,7 @@ class LogEntry {
   LogEntry({required this.action, required this.timestamp});
 
   Map<String, dynamic> toMap() {
-    return {
-      'action': action,
-      'timestamp': timestamp.toIso8601String(),
-    };
+    return {'action': action, 'timestamp': timestamp.toIso8601String()};
   }
 
   factory LogEntry.fromMap(Map<String, dynamic> map) {
@@ -23,5 +19,6 @@ class LogEntry {
 
   String toJson() => json.encode(toMap());
 
-  factory LogEntry.fromJson(String source) => LogEntry.fromMap(json.decode(source));
+  factory LogEntry.fromJson(String source) =>
+      LogEntry.fromMap(json.decode(source));
 }

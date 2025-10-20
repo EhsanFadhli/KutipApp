@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,10 +24,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: kBackground,
         textTheme: Theme.of(context).textTheme.apply(
-              bodyColor: kPrimaryText,
-              displayColor: kPrimaryText,
-              fontFamily: 'Inter', // A clean, modern default
-            ),
+          bodyColor: kPrimaryText,
+          displayColor: kPrimaryText,
+          fontFamily: 'Inter', // A clean, modern default
+        ),
       ),
       home: const DashboardScreen(),
     );
@@ -55,9 +54,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadPayments() async {
     final prefs = await SharedPreferences.getInstance();
     final List<String> paymentsJson = prefs.getStringList('payments') ?? [];
-    final List<Payment> payments = paymentsJson.map((p) => Payment.fromJson(p)).toList();
-    payments.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Sort by most recent
-    final double totalCash = payments.fold(0.0, (sum, item) => sum + item.amountReceived);
+    final List<Payment> payments = paymentsJson
+        .map((p) => Payment.fromJson(p))
+        .toList();
+    payments.sort(
+      (a, b) => b.createdAt.compareTo(a.createdAt),
+    ); // Sort by most recent
+    final double totalCash = payments.fold(
+      0.0,
+      (sum, item) => sum + item.amountReceived,
+    );
 
     setState(() {
       _payments = payments;
@@ -73,17 +79,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return CountdownConfirmationDialog(
           onConfirm: () async {
             final prefs = await SharedPreferences.getInstance();
-            final List<String> recentPaymentsJson = prefs.getStringList('payments') ?? [];
-            final List<String> previousPaymentsJson = prefs.getStringList('previous_payments') ?? [];
+            final List<String> recentPaymentsJson =
+                prefs.getStringList('payments') ?? [];
+            final List<String> previousPaymentsJson =
+                prefs.getStringList('previous_payments') ?? [];
 
             previousPaymentsJson.addAll(recentPaymentsJson);
 
-            await prefs.setStringList('previous_payments', previousPaymentsJson);
+            await prefs.setStringList(
+              'previous_payments',
+              previousPaymentsJson,
+            );
             await prefs.remove('payments');
 
-            final formattedAmount = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(_totalCashCollected);
-            await LogService.logAction('Archived all recent payments - $formattedAmount');
-
+            final formattedAmount = NumberFormat.currency(
+              locale: 'en_MY',
+              symbol: 'RM',
+            ).format(_totalCashCollected);
+            await LogService.logAction(
+              'Archived all recent payments - $formattedAmount',
+            );
+            if (!mounted) return;
             _loadPayments();
           },
         );
@@ -91,6 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
 
     if (result == true) {
+      if (!mounted) return;
       showSuccessSnackBar(context, 'Cash Handed and Payments Archived!');
     }
   }
@@ -108,67 +125,82 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: kBackground,
-        elevation: 0,
-        title: const Text(
-          'Kutip',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-            letterSpacing: 1.5,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history, color: kSubtleText),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const PreviousPaymentsPage()),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: kBackground,
+          elevation: 0,
+          title: const Text(
+            'Kutip',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+              letterSpacing: 1.5,
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.article, color: kSubtleText),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const LogsPage()),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.history, color: kSubtleText),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PreviousPaymentsPage(),
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 80.0), // Add padding for FAB
-        children: <Widget>[
-          TotalCashCard(totalCash: _totalCashCollected, onCashHanded: _showCashHandedConfirmation),
-          const SizedBox(height: 24),
-          const MonthlyFeeCard(),
-          const SizedBox(height: 24),
-          RecentPaymentsSection(payments: _payments),
-        ],
-      ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: kPrimaryBlue.withOpacity(0.5),
-              blurRadius: 15,
-              spreadRadius: 2,
-              offset: const Offset(0, 5),
+            IconButton(
+              icon: const Icon(Icons.article, color: kSubtleText),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LogsPage()),
+              ),
             ),
           ],
         ),
-        child: FloatingActionButton.extended(
-          onPressed: _navigateToAddPayment,
-          backgroundColor: kPrimaryBlue,
-          foregroundColor: kPrimaryText,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          icon: const Icon(Icons.add, size: 24),
-          label: const Text(
-            'New Payment',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            16.0,
+            16.0,
+            16.0,
+            80.0,
+          ), // Add padding for FAB
+          children: <Widget>[
+            TotalCashCard(
+              totalCash: _totalCashCollected,
+              onCashHanded: _showCashHandedConfirmation,
+            ),
+            const SizedBox(height: 24),
+            const MonthlyFeeCard(),
+            const SizedBox(height: 24),
+            RecentPaymentsSection(payments: _payments),
+          ],
+        ),
+        floatingActionButton: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: kPrimaryBlue.withAlpha(128),
+                blurRadius: 15,
+                spreadRadius: 2,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: FloatingActionButton.extended(
+            onPressed: _navigateToAddPayment,
+            backgroundColor: kPrimaryBlue,
+            foregroundColor: kPrimaryText,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            icon: const Icon(Icons.add, size: 24),
+            label: const Text(
+              'New Payment',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ),
         ),
       ),
@@ -179,11 +211,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class TotalCashCard extends StatelessWidget {
   final double totalCash;
   final VoidCallback onCashHanded;
-  const TotalCashCard({super.key, required this.totalCash, required this.onCashHanded});
+  const TotalCashCard({
+    super.key,
+    required this.totalCash,
+    required this.onCashHanded,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final formattedTotal = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(totalCash);
+    final formattedTotal = NumberFormat.currency(
+      locale: 'en_MY',
+      symbol: 'RM',
+    ).format(totalCash);
     final isCashCollected = totalCash > 0;
     return ElevatedCard(
       child: Column(
@@ -214,9 +253,12 @@ class TotalCashCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: kAccentRed,
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: kAccentRed.withOpacity(0.5),
+                disabledBackgroundColor: kAccentRed.withAlpha(128),
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0),
                 ),
@@ -238,6 +280,7 @@ class MonthlyFeeCard extends StatefulWidget {
 
 class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
   final TextEditingController _feeController = TextEditingController();
+  final FocusNode _feeFocusNode = FocusNode();
   static const String _storageKey = "monthly_fee";
   int _savedFeeInCents = 0;
   bool _isFeeChanged = false;
@@ -247,6 +290,25 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
     super.initState();
     _loadFee();
     _feeController.addListener(_onFeeChanged);
+    _feeFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (_feeFocusNode.hasFocus) {
+      _feeController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _feeController.text.length,
+      );
+    } else {
+      // Revert to the saved value if the user clicks away
+      // without saving.
+      if (_isFeeChanged) {
+        setState(() {
+          _feeController.text = _formatCurrency(_savedFeeInCents);
+          _isFeeChanged = false;
+        });
+      }
+    }
   }
 
   void _onFeeChanged() {
@@ -281,18 +343,28 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
     final double fee = feeInCents / 100.0;
 
     await prefs.setDouble(_storageKey, fee);
-    final formattedFee = NumberFormat.currency(locale: 'en_MY', symbol: 'RM').format(fee);
+    final formattedFee = NumberFormat.currency(
+      locale: 'en_MY',
+      symbol: 'RM',
+    ).format(fee);
     await LogService.logAction('Set monthly fee - $formattedFee');
     setState(() {
       _savedFeeInCents = feeInCents;
       _isFeeChanged = false;
     });
-    FocusScope.of(context).unfocus();
-    showSuccessSnackBar(context, 'Monthly Fee Saved!');
+
+    if (mounted) {
+      FocusScope.of(context).unfocus();
+      showSuccessSnackBar(context, 'Monthly Fee Saved!');
+    }
   }
 
   String _formatCurrency(int amountInCents) {
-    final format = NumberFormat.currency(locale: 'en_MY', symbol: 'RM', decimalDigits: 2);
+    final format = NumberFormat.currency(
+      locale: 'en_MY',
+      symbol: 'RM',
+      decimalDigits: 2,
+    );
     return format.format(amountInCents / 100.0);
   }
 
@@ -318,9 +390,13 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
               Expanded(
                 child: TextField(
                   controller: _feeController,
+                  focusNode: _feeFocusNode,
                   autofocus: false,
                   keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, CurrencyInputFormatter()],
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    CurrencyInputFormatter(),
+                  ],
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -347,10 +423,15 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimaryBlue,
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: kPrimaryBlue.withOpacity(0.5),
+                disabledBackgroundColor: kPrimaryBlue.withAlpha(128),
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
               ),
             ),
           ),
@@ -363,11 +444,11 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
   void dispose() {
     _feeController.removeListener(_onFeeChanged);
     _feeController.dispose();
+    _feeFocusNode.removeListener(_onFocusChange);
+    _feeFocusNode.dispose();
     super.dispose();
   }
 }
-
-
 
 // --- Recent Payments Section ---
 class RecentPaymentsSection extends StatelessWidget {
@@ -392,7 +473,11 @@ class RecentPaymentsSection extends StatelessWidget {
         children: [
           const Text(
             'Recent Payments',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kPrimaryText),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: kPrimaryText,
+            ),
           ),
           const SizedBox(height: 16),
           if (payments.isEmpty)
@@ -431,10 +516,12 @@ class CountdownConfirmationDialog extends StatefulWidget {
   const CountdownConfirmationDialog({super.key, required this.onConfirm});
 
   @override
-  State<CountdownConfirmationDialog> createState() => _CountdownConfirmationDialogState();
+  State<CountdownConfirmationDialog> createState() =>
+      _CountdownConfirmationDialogState();
 }
 
-class _CountdownConfirmationDialogState extends State<CountdownConfirmationDialog> {
+class _CountdownConfirmationDialogState
+    extends State<CountdownConfirmationDialog> {
   int _countdown = 10;
   Timer? _timer;
 
@@ -465,31 +552,40 @@ class _CountdownConfirmationDialogState extends State<CountdownConfirmationDialo
   @override
   Widget build(BuildContext context) {
     final bool isConfirmEnabled = _countdown == 0;
+    final NavigatorState navigator = Navigator.of(context);
 
     return AlertDialog(
       backgroundColor: kCardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Confirm Action', style: TextStyle(color: kPrimaryText, fontWeight: FontWeight.bold)),
+      title: const Text(
+        'Confirm Action',
+        style: TextStyle(color: kPrimaryText, fontWeight: FontWeight.bold),
+      ),
       content: Text(
         'This will archive all recent payments and reset the collected cash amount. This action cannot be undone.',
         style: TextStyle(color: kSubtleText),
       ),
       actions: <Widget>[
         TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: () => navigator.pop(false),
           child: const Text('Cancel', style: TextStyle(color: kPrimaryBlue)),
         ),
         ElevatedButton(
           onPressed: isConfirmEnabled
               ? () async {
                   await widget.onConfirm();
-                  Navigator.of(context).pop(true);
+
+                  if (mounted) {
+                    navigator.pop(true);
+                  }
                 }
               : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: kAccentRed,
-            disabledBackgroundColor: kAccentRed.withOpacity(0.5),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            disabledBackgroundColor: kAccentRed.withAlpha(128),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
           child: Text(
             isConfirmEnabled ? 'Confirm' : 'Confirm ($_countdown)',
