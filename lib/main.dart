@@ -132,16 +132,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           backgroundColor: kBackground,
           elevation: 0,
           title: const Text(
-            'Kutip',
+            'Kutip App',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 24,
               letterSpacing: 1.5,
+              color: Colors.white,
             ),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.history, color: kSubtleText),
+              icon: const Icon(Icons.history, color: Colors.white),
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -150,7 +151,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.article, color: kSubtleText),
+              icon: const Icon(Icons.article, color: Colors.white),
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const LogsPage()),
@@ -295,19 +296,25 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
 
   void _onFocusChange() {
     if (_feeFocusNode.hasFocus) {
+      // When the field gains focus, select all the text.
       _feeController.selection = TextSelection(
         baseOffset: 0,
         extentOffset: _feeController.text.length,
       );
     } else {
-      // Revert to the saved value if the user clicks away
-      // without saving.
-      if (_isFeeChanged) {
-        setState(() {
-          _feeController.text = _formatCurrency(_savedFeeInCents);
-          _isFeeChanged = false;
-        });
-      }
+      // When focus is lost, we introduce a small delay.
+      // This allows the button's onPressed to fire before we check
+      // if we should revert the text.
+      Future.delayed(const Duration(milliseconds: 100), () {
+        // If a save hasn't happened, _isFeeChanged will still be true.
+        // We also need to check if the widget is still in the tree.
+        if (mounted && _isFeeChanged) {
+          setState(() {
+            _feeController.text = _formatCurrency(_savedFeeInCents);
+            _isFeeChanged = false;
+          });
+        }
+      });
     }
   }
 
@@ -471,13 +478,15 @@ class RecentPaymentsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Recent Payments',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: kPrimaryText,
-            ),
+          const Row(
+            children: [
+              Icon(Icons.receipt_long, color: kSubtleText, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Recent Payments',
+                style: TextStyle(color: kSubtleText, fontSize: 16),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           if (payments.isEmpty)
