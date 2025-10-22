@@ -56,6 +56,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
   String? _selectedBlock;
   final _unitController = TextEditingController();
   final _amountReceivedController = TextEditingController();
+  final _notesController = TextEditingController(); // Added notes controller
   String? _fromMonth;
   String? _untilMonth;
   String? _fromYear;
@@ -88,6 +89,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     _phoneController.dispose();
     _unitController.dispose();
     _amountReceivedController.dispose();
+    _notesController.dispose(); // Dispose notes controller
     super.dispose();
   }
 
@@ -158,6 +160,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         untilMonth: _untilMonth!,
         fromYear: _fromYear!,
         untilYear: _untilYear!,
+        notes: _notesController.text, // Save notes
       );
 
       final prefs = await SharedPreferences.getInstance();
@@ -206,6 +209,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                     controller: _nameController,
                     icon: Icons.person,
                     textCapitalization: TextCapitalization.words,
+                    isMandatory: true,
                   ),
                   const SizedBox(height: 16),
                   _buildTextField(
@@ -217,6 +221,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                       FilteringTextInputFormatter.digitsOnly,
                       PhoneNumberInputFormatter(),
                     ],
+                    isMandatory: true,
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -232,6 +237,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                           ],
+                          isMandatory: true,
                         ),
                       ),
                     ],
@@ -263,6 +269,18 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                   ),
                   const SizedBox(height: 16),
                   _buildBalanceDisplay(),
+                ],
+              ),
+               const SizedBox(height: 24),
+              _buildSectionCard(
+                title: 'Notes',
+                children: [
+                  _buildTextField(
+                    label: 'Notes (Optional)',
+                    controller: _notesController,
+                    icon: Icons.note,
+                    isMandatory: false, // Make notes optional
+                  ),
                 ],
               ),
               const SizedBox(height: 32),
@@ -327,6 +345,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    bool isMandatory = true, // Add isMandatory flag
   }) {
     return TextFormField(
       controller: controller,
@@ -344,7 +363,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
         ),
       ),
       validator: (value) {
-        if (value == null || value.isEmpty) {
+        if (isMandatory && (value == null || value.isEmpty)) {
           return 'Please enter a $label';
         }
         return null;

@@ -1,16 +1,5 @@
-# myapp
+# Kutip - Effortless Offline Payment Management
 
-A new Flutter project.
+## Overview
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Kutip is a streamlined, completely offline payment management application designed to simplify the process of tracking and recording payments. It offers a user-friendly interface for quickly adding new payment records, viewing a comprehensive history of all transactions, and tracking all actions taken within the app, all stored locally on the device.

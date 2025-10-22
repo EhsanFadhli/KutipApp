@@ -13,6 +13,7 @@ class Payment {
   String untilMonth;
   String fromYear;
   String untilYear;
+  String notes;
 
   Payment({
     required this.name,
@@ -27,6 +28,7 @@ class Payment {
     required this.untilMonth,
     required this.fromYear,
     required this.untilYear,
+    this.notes = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -43,6 +45,7 @@ class Payment {
       'untilMonth': untilMonth,
       'fromYear': fromYear,
       'untilYear': untilYear,
+      'notes': notes,
     };
   }
 
@@ -62,6 +65,7 @@ class Payment {
       untilMonth: map['untilMonth']?.toString() ?? '',
       fromYear: map['fromYear']?.toString() ?? '',
       untilYear: map['untilYear']?.toString() ?? '',
+      notes: map['notes']?.toString() ?? '',
     );
   }
 

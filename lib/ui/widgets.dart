@@ -285,6 +285,12 @@ class PaymentDetailsContent extends StatelessWidget {
             label: 'Period',
             value: formatPeriod(payment),
           ),
+          if (payment.notes.isNotEmpty)
+            _buildDetailRow(
+              icon: Icons.note,
+              label: 'Notes',
+              value: payment.notes,
+            ),
           const Divider(color: kSubtleText, height: 32),
           _buildAmountRow(
             label: 'Amount Paid',
