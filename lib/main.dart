@@ -8,6 +8,7 @@ import 'package:kutip/logs_page.dart';
 import 'package:kutip/payment_model.dart';
 import 'package:kutip/previous_payments_page.dart';
 import 'package:kutip/ui/widgets.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -24,10 +25,10 @@ class Kutip extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: kBackground,
         textTheme: Theme.of(context).textTheme.apply(
-          bodyColor: kPrimaryText,
-          displayColor: kPrimaryText,
-          fontFamily: 'Inter', // A clean, modern default
-        ),
+              bodyColor: kPrimaryText,
+              displayColor: kPrimaryText,
+              fontFamily: 'Inter', // A clean, modern default
+            ),
       ),
       home: const DashboardScreen(),
     );
@@ -134,14 +135,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
         appBar: AppBar(
           backgroundColor: kBackground,
           elevation: 0,
-          title: const Text(
-            'Kutip App',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-              letterSpacing: 1.5,
-              color: Colors.white,
-            ),
+          title: FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                final version = snapshot.data!.version;
+                return RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                      letterSpacing: 1.5,
+                      color: Colors.white,
+                      fontFamily: 'Inter',
+                    ),
+                    children: <TextSpan>[
+                      const TextSpan(text: 'Kutip App '),
+                      TextSpan(
+                        text: 'v$version',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                          color: kSubtleText,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                return const Text(
+                  'Kutip App',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    letterSpacing: 1.5,
+                    color: Colors.white,
+                  ),
+                );
+              }
+            },
           ),
           actions: [
             IconButton(
