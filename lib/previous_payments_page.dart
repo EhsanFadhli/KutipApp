@@ -1,3 +1,7 @@
+import 'dart:typed_data';
+
+import 'package:csv/csv.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:kutip/payment_model.dart';
 import 'package:kutip/ui/widgets.dart';
@@ -62,6 +66,68 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
     );
   }
 
+  Future<void> _exportToCSV() async {
+    if (_payments.isEmpty) {
+      if (!mounted) return;
+      showSuccessSnackBar(context, 'No payments to export.');
+      return;
+    }
+
+    final List<List<dynamic>> rows = [];
+    // Add headers
+    rows.add([
+      'Name',
+      'Phone',
+      'Block',
+      'Unit',
+      'Amount to Pay',
+      'Amount Received',
+      'Balance',
+      'Date',
+      'From Month',
+      'Until Month',
+      'From Year',
+      'Until Year',
+      'Notes',
+    ]);
+
+    // Add data rows
+    for (final payment in _payments) {
+      rows.add([
+        payment.name,
+        payment.phone,
+        payment.block,
+        payment.unit,
+        payment.amountToPay,
+        payment.amountReceived,
+        payment.balance,
+        payment.createdAt.toIso8601String(),
+        payment.fromMonth,
+        payment.untilMonth,
+        payment.fromYear,
+        payment.untilYear,
+        payment.notes,
+      ]);
+    }
+
+    final String csv = const ListToCsvConverter().convert(rows);
+    final Uint8List bytes = Uint8List.fromList(csv.codeUnits);
+
+    try {
+      final String path = await FileSaver.instance.saveFile(
+        name: 'kutip-payments-${DateTime.now().toIso8601String()}.csv',
+        bytes: bytes,
+        mimeType: MimeType.csv,
+      );
+      if (!mounted) return;
+      showSuccessSnackBar(context, 'Exported to $path');
+    } catch (e) {
+      if (!mounted) return;
+      showSuccessSnackBar(context, 'Error exporting file: $e');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,6 +143,15 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
           icon: const Icon(Icons.arrow_back, color: kPrimaryText),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: IconButton(
+              icon: const Icon(Icons.ios_share, color: kPrimaryText),
+              onPressed: _exportToCSV,
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

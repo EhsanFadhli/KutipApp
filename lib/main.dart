@@ -153,11 +153,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.article, color: Colors.white),
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LogsPage()),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                icon: const Icon(Icons.article, color: Colors.white),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LogsPage()),
+                ),
               ),
             ),
           ],
