@@ -2,20 +2,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:myapp/add_payment_page.dart' show AddPaymentPage;
-import 'package:myapp/log_service.dart';
-import 'package:myapp/logs_page.dart';
-import 'package:myapp/payment_model.dart';
-import 'package:myapp/previous_payments_page.dart';
-import 'package:myapp/ui/widgets.dart';
+import 'package:kutip/add_payment_page.dart' show AddPaymentPage;
+import 'package:kutip/log_service.dart';
+import 'package:kutip/logs_page.dart';
+import 'package:kutip/payment_model.dart';
+import 'package:kutip/previous_payments_page.dart';
+import 'package:kutip/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const Kutip());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class Kutip extends StatelessWidget {
+  const Kutip({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -444,10 +444,7 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
             ],
           ),
           const SizedBox(height: 20),
-          if (_isEditing)
-            _buildActionButtons()
-          else
-            _buildEditButton(),
+          if (_isEditing) _buildActionButtons() else _buildEditButton(),
         ],
       ),
     );
@@ -506,10 +503,7 @@ class _MonthlyFeeCardState extends State<MonthlyFeeCard> {
           backgroundColor: kPrimaryBlue,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
@@ -645,12 +639,12 @@ class _CountdownConfirmationDialogState
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(
         widget.title,
-        style: const TextStyle(color: kPrimaryText, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          color: kPrimaryText,
+          fontWeight: FontWeight.bold,
+        ),
       ),
-      content: Text(
-        widget.content,
-        style: TextStyle(color: kSubtleText),
-      ),
+      content: Text(widget.content, style: TextStyle(color: kSubtleText)),
       actions: <Widget>[
         TextButton(
           onPressed: () => navigator.pop(false),

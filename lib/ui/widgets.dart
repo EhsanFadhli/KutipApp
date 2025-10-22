@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:myapp/payment_model.dart';
+import 'package:kutip/payment_model.dart';
 
 // --- Professional Color Palette ---
 const Color kPrimaryBlue = Color(0xFF0D63F8);
@@ -318,21 +318,21 @@ class PaymentDetailsContent extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: kSubtleText, size: 18),
           const SizedBox(width: 16),
+          Text(label, style: const TextStyle(color: kSubtleText, fontSize: 16)),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
-              label,
-              style: const TextStyle(color: kSubtleText, fontSize: 16),
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: kPrimaryText,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              value,
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                color: kPrimaryText,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

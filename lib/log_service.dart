@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:myapp/log_model.dart';
+import 'package:kutip/log_model.dart';
 
 class LogService {
   static const String _logKey = 'app_logs';

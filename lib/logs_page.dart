@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:myapp/log_model.dart';
-import 'package:myapp/log_service.dart';
-import 'package:myapp/ui/widgets.dart';
+import 'package:kutip/log_model.dart';
+import 'package:kutip/log_service.dart';
+import 'package:kutip/ui/widgets.dart';
 
 class LogsPage extends StatefulWidget {
   const LogsPage({super.key});

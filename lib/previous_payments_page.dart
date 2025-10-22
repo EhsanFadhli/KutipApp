@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/payment_model.dart';
-import 'package:myapp/ui/widgets.dart';
+import 'package:kutip/payment_model.dart';
+import 'package:kutip/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
 

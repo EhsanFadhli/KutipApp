@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:myapp/log_service.dart';
-import 'package:myapp/payment_model.dart';
-import 'package:myapp/ui/widgets.dart';
+import 'package:kutip/log_service.dart';
+import 'package:kutip/payment_model.dart';
+import 'package:kutip/ui/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Custom formatter for phone number
@@ -271,7 +271,7 @@ class _AddPaymentPageState extends State<AddPaymentPage> {
                   _buildBalanceDisplay(),
                 ],
               ),
-               const SizedBox(height: 24),
+              const SizedBox(height: 24),
               _buildSectionCard(
                 title: 'Notes',
                 children: [
