@@ -11,6 +11,7 @@ Kutip is a streamlined, completely offline payment management application design
 - **Previous Payments:** View a chronological list of all past payments, sorted with the most recent transactions first. 
 - **Action Logs:** Access a detailed log of all actions taken within the app, including adding payments, archiving payments, and setting the monthly fee. The log now displays the amount associated with each action in a larger font for better visibility.
 - **Payment Details:** Access detailed information for each payment, including a complete breakdown of the transaction, payer information, and payment period.
+- **Copy Payment Details:** A new copy icon button has been added to the "Payment Details" view. This allows users to easily copy all relevant payment information to the clipboard with a single tap, formatted for easy sharing. The date range is now formatted as `Nov 2025 - Jan 2026`.
 - **Modern & Intuitive UI:** The app features a clean and modern design with a professional color palette, ensuring a seamless user experience.
 
 ## Design and Style
@@ -86,3 +87,10 @@ The current development effort is focused on refining the user interface.
 
 19. **Disable "Cash Handed" Button:**
     -   The "Cash Handed" button is now disabled when the total cash collected is zero, preventing accidental or unnecessary actions.
+
+20. **Add Copy to Clipboard:**
+    - A new copy icon button has been added to the "Payment Details" view. This allows users to easily copy all relevant payment information to the clipboard with a single tap, formatted for easy sharing.
+
+21. **Refine Copy Format:**
+    - The date format in the copied text has been updated to be more readable (e.g., `Bulan Nov 2025 - Jan 2026`).
+    - Fixed a bug where the unit number was missing from the copied address.

@@ -234,6 +234,41 @@ class PaymentDetailsContent extends StatelessWidget {
       return from == until ? from : '$from - $until';
     }
 
+    void copyDetailsToClipboard() {
+      final fromMonthShort = payment.fromMonth.substring(0, 3);
+      final untilMonthShort = payment.untilMonth.substring(0, 3);
+
+      String periodString;
+      if (payment.fromYear == payment.untilYear) {
+        if (payment.fromMonth == payment.untilMonth) {
+          periodString = '$fromMonthShort ${payment.fromYear}';
+        } else {
+          periodString =
+              '$fromMonthShort - $untilMonthShort ${payment.untilYear}';
+        }
+      } else {
+        periodString =
+            '$fromMonthShort ${payment.fromYear} - $untilMonthShort ${payment.untilYear}';
+      }
+
+      final amountFormatted = NumberFormat.currency(
+        locale: 'en_MY',
+        symbol: 'RM',
+      ).format(payment.amountReceived);
+
+      final details = [
+        payment.name,
+        '${payment.block}-${payment.unit}',
+        payment.phone,
+        periodString,
+        amountFormatted,
+        if (payment.notes.isNotEmpty) payment.notes,
+      ].join('\n');
+
+      Clipboard.setData(ClipboardData(text: details));
+      showSuccessSnackBar(context, 'Details copied to clipboard!');
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -250,13 +285,22 @@ class PaymentDetailsContent extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Payment Details',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: kPrimaryText,
-                ),
+              Row(
+                children: [
+                  const Text(
+                    'Payment Details',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: kPrimaryText,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy, color: kSubtleText, size: 20),
+                    tooltip: 'Copy Details',
+                    onPressed: copyDetailsToClipboard,
+                  ),
+                ],
               ),
               IconButton(
                 icon: const Icon(Icons.close, color: kSubtleText),
