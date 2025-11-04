@@ -80,7 +80,9 @@ class _LogsPageState extends State<LogsPage> {
                                     kGreenAccent; // Default color
                                 Widget? trailing;
 
-                                bool isArchive = action.contains('Archived');
+                                bool isArchive =
+                                    action.contains('Archived') ||
+                                    action.contains('archived');
                                 bool isSetFee = action.contains(
                                   'Set monthly fee',
                                 );

@@ -101,7 +101,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               symbol: 'RM',
             ).format(_totalCashCollected);
             await LogService.logAction(
-              'All recent payments has been handed out - $formattedAmount',
+              'Recent payments has been handed and archived - $formattedAmount',
             );
             if (!mounted) return;
             _loadPayments();
