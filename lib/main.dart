@@ -25,10 +25,10 @@ class Kutip extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: kBackground,
         textTheme: Theme.of(context).textTheme.apply(
-              bodyColor: kPrimaryText,
-              displayColor: kPrimaryText,
-              fontFamily: 'Inter', // A clean, modern default
-            ),
+          bodyColor: kPrimaryText,
+          displayColor: kPrimaryText,
+          fontFamily: 'Inter', // A clean, modern default
+        ),
       ),
       home: const DashboardScreen(),
     );
@@ -78,9 +78,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return CountdownConfirmationDialog(
-          title: 'Archive Payments',
+          title: 'Cash Handed?',
           content:
-              'This will archive all recent payments and reset the collected cash amount. This action cannot be undone and will be logged.',
+              'This will archive all recent payments and reset the collected cash amount. This action cannot be undone.',
           onConfirm: () async {
             final prefs = await SharedPreferences.getInstance();
             final List<String> recentPaymentsJson =
@@ -101,7 +101,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               symbol: 'RM',
             ).format(_totalCashCollected);
             await LogService.logAction(
-              'Archived all recent payments - $formattedAmount',
+              'All recent payments has been handed out - $formattedAmount',
             );
             if (!mounted) return;
             _loadPayments();

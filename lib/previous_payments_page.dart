@@ -69,8 +69,16 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
   Future<void> _exportToCSV() async {
     if (_payments.isEmpty) {
       if (!mounted) return;
-      showSuccessSnackBar(context, 'No payments to export.');
+      showFailureSnackBar(context, 'No payments to export.');
       return;
+    }
+
+    String formatAmount(double amount) {
+      String formatted = amount.toStringAsFixed(2);
+      if (formatted == '-0.00') {
+        return '0.00';
+      }
+      return formatted;
     }
 
     final List<List<dynamic>> rows = [];
@@ -98,9 +106,9 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
         payment.phone,
         payment.block,
         payment.unit,
-        payment.amountToPay,
-        payment.amountReceived,
-        payment.balance,
+        formatAmount(payment.amountToPay),
+        formatAmount(payment.amountReceived),
+        formatAmount(payment.balance),
         payment.createdAt.toIso8601String(),
         payment.fromMonth,
         payment.untilMonth,
@@ -114,16 +122,22 @@ class _PreviousPaymentsPageState extends State<PreviousPaymentsPage> {
     final Uint8List bytes = Uint8List.fromList(csv.codeUnits);
 
     try {
-      final String path = await FileSaver.instance.saveFile(
-        name: 'kutip-payments-${DateTime.now().toIso8601String()}.csv',
+      final String baseName = 'kutip-payments-${DateTime.now().toIso8601String()}';
+      final String? path = await FileSaver.instance.saveAs(
+        name: baseName,
         bytes: bytes,
+        fileExtension: 'csv',
         mimeType: MimeType.csv,
       );
-      if (!mounted) return;
-      showSuccessSnackBar(context, 'Exported to $path');
+
+      if (path != null && mounted) {
+        showSuccessSnackBar(context, 'Exported to $path');
+      } else if (mounted) {
+        showFailureSnackBar(context, 'Save operation cancelled.');
+      }
     } catch (e) {
       if (!mounted) return;
-      showSuccessSnackBar(context, 'Error exporting file: $e');
+      showFailureSnackBar(context, 'Error exporting file: $e');
     }
   }
 

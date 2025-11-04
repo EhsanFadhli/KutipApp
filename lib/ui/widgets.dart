@@ -11,16 +11,35 @@ const Color kCardBackground = Color(0xFF1E1E1E);
 const Color kSubtleText = Color(0xFFBDBDBD);
 const Color kPrimaryText = Color(0xFFFFFFFF);
 const Color kGreenAccent = Color(0xFF69F0AE);
+const Color kSuccessGreen = Color(0xFF2E7D32);
+const Color kErrorRed = Color(0xFFD32F2F);
+
 
 // --- Reusable Widgets ---
 
 void showSuccessSnackBar(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: _AnimatedSnackBarContent(message: message),
-      backgroundColor: const Color(
-        0xFF2E7D32,
-      ), // Use a specific dark green for the SnackBar background
+      content: _AnimatedSnackBarContent(
+        message: message,
+        icon: Icons.check_circle,
+      ),
+      backgroundColor: kSuccessGreen,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      margin: const EdgeInsets.all(16.0),
+    ),
+  );
+}
+
+void showFailureSnackBar(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: _AnimatedSnackBarContent(
+        message: message,
+        icon: Icons.error,
+      ),
+      backgroundColor: kErrorRed,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       margin: const EdgeInsets.all(16.0),
@@ -30,8 +49,9 @@ void showSuccessSnackBar(BuildContext context, String message) {
 
 class _AnimatedSnackBarContent extends StatefulWidget {
   final String message;
+  final IconData icon;
 
-  const _AnimatedSnackBarContent({required this.message});
+  const _AnimatedSnackBarContent({required this.message, required this.icon});
 
   @override
   _AnimatedSnackBarContentState createState() =>
@@ -73,7 +93,7 @@ class _AnimatedSnackBarContentState extends State<_AnimatedSnackBarContent>
         position: _offsetAnimation,
         child: Row(
           children: [
-            const Icon(Icons.check_circle, color: kPrimaryText),
+            Icon(widget.icon, color: kPrimaryText),
             const SizedBox(width: 16),
             Expanded(
               child: Text(
